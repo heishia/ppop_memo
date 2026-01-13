@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Desktop memo application with sticky notes, file association, and handwriting recognition",
-  "main": "dist/main/index.js",
+  "main": "dist/apps/desktop/main/index.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:electron\" \"npm run dev:renderer\" \"npm run dev:start\"",
     "dev:electron": "tsc -w --project tsconfig.electron.json",
@@ -11,7 +11,7 @@
     "dev:start": "node scripts/dev-start.js",
     "build": "npm run build:renderer && npm run build:electron",
     "build:renderer": "vite build",
-    "build:electron": "tsc --project tsconfig.electron.json && node -e \"require('fs').writeFileSync('dist/main/package.json','{\\\"type\\\":\\\"commonjs\\\"}')\"",
+    "build:electron": "tsc --project tsconfig.electron.json && node -e \"require('fs').writeFileSync('dist/package.json','{\\\"type\\\":\\\"commonjs\\\"}')\"",
     "start": "electron .",
     "dist": "npm run build && electron-builder",
     "lint": "eslint . --ext .ts,.tsx",

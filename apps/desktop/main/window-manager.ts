@@ -26,7 +26,7 @@ export class WindowManager {
       win.loadURL(`http://localhost:${port}`);
       win.webContents.openDevTools();
     } else {
-      win.loadFile(path.join(__dirname, '../../dist/renderer/index.html'));
+      win.loadFile(path.join(__dirname, '../../../../dist/renderer/index.html'));
     }
     
     this.windows.set(win.id, win);

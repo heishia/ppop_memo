@@ -7,7 +7,7 @@ export default defineConfig({
   root: 'apps/desktop/renderer',
   base: './',
   build: {
-    outDir: '../../dist/renderer',
+    outDir: '../../../dist/renderer',
     emptyOutDir: true,
   },
   resolve: {
