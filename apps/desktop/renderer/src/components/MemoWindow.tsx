@@ -44,6 +44,13 @@ const CloseIcon = () => (
   </svg>
 );
 
+const PlusIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"/>
+    <line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+);
+
 function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
   const [memo, setMemo] = useState(initialMemo);
   const [mode, setMode] = useState<'text' | 'canvas'>(initialMemo.mode || 'text');
@@ -102,7 +109,9 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
       await editorRef.current.saveNow();
     }
     
-    const currentTitle = memo?.title || '제목 없음';
+    let baseTitle = memo?.title || '제목 없음';
+    baseTitle = baseTitle.replace(/\s*\((캔버스|텍스트)\)\s*\d{4}-\d{2}-\d{2}-오전|오후\s*\d{2}-\d{2}.*$/g, '').trim();
+    
     const timestamp = new Date().toLocaleString('ko-KR', { 
       year: 'numeric', 
       month: '2-digit', 
@@ -111,7 +120,7 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
       minute: '2-digit' 
     }).replace(/\. /g, '-').replace(/\./g, '').replace(':', '-');
     
-    const newTitle = `${currentTitle} (${newMode === 'canvas' ? '캔버스' : '텍스트'}) ${timestamp}`;
+    const newTitle = `${baseTitle} (${newMode === 'canvas' ? '캔버스' : '텍스트'}) ${timestamp}`;
     
     const newMemo = await window.electronAPI.memo.create({
       title: newTitle,
@@ -160,6 +169,10 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
     await window.electronAPI.window.loadMemo(loadMemoId);
   };
 
+  const handleCreateNewMemo = async () => {
+    await window.electronAPI.window.createNew();
+  };
+
   return (
     <div className="h-screen flex flex-col bg-yellow-50">
       <div className="bg-yellow-50 border-b border-yellow-200 flex items-center justify-between" style={{ WebkitAppRegion: 'drag' } as any}>
@@ -167,6 +180,13 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
           PPOP Memo
         </div>
         <div className="flex items-center gap-0.5 pr-1" style={{ WebkitAppRegion: 'no-drag' } as any}>
+          <button
+            onClick={handleCreateNewMemo}
+            className="p-1 rounded hover:bg-yellow-200 text-gray-600 transition-colors"
+            title="새 메모"
+          >
+            <PlusIcon />
+          </button>
           <button
             onClick={handleManualSave}
             className={`p-1 rounded transition-colors ${isSaving ? 'bg-green-500 text-white' : 'hover:bg-yellow-200 text-gray-600'}`}
@@ -226,6 +246,12 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
         <MemoEditor ref={editorRef} memoId={memoId} memo={memo} mode={mode} />
         <ModeToggleButton mode={mode} onToggle={handleModeToggle} />
       </div>
+      {showMemoManagement && (
+        <MemoManagement
+          onClose={() => setShowMemoManagement(false)}
+          onLoadMemo={handleLoadMemo}
+        />
+      )}
     </div>
   );
 }

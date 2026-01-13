@@ -176,4 +176,9 @@ export function setupIpcHandlers(windowManager: WindowManager): void {
     }
     return { success: false };
   });
+
+  ipcMain.handle('window:createNew', async () => {
+    const newWin = windowManager.createNewMemoWindow();
+    return { success: true, windowId: newWin.id };
+  });
 }

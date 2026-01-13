@@ -22,6 +22,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     minimize: () => ipcRenderer.invoke('window:minimize'),
     close: () => ipcRenderer.invoke('window:close'),
     loadMemo: (memoId: number) => ipcRenderer.invoke('window:loadMemo', memoId),
+    createNew: () => ipcRenderer.invoke('window:createNew'),
   },
   on: (channel: string, callback: (...args: any[]) => void) => {
     ipcRenderer.on(channel, (_, ...args) => callback(...args));

@@ -154,4 +154,8 @@ function setupIpcHandlers(windowManager) {
         }
         return { success: false };
     });
+    electron_1.ipcMain.handle('window:createNew', async () => {
+        const newWin = windowManager.createNewMemoWindow();
+        return { success: true, windowId: newWin.id };
+    });
 }

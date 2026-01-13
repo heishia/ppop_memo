@@ -23,6 +23,7 @@ declare global {
         getId: () => number;
         minimize: () => Promise<any>;
         close: () => Promise<any>;
+        createNew: () => Promise<any>;
       };
       on: (channel: string, callback: (...args: any[]) => void) => void;
     };
