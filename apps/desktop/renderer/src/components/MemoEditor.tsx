@@ -16,6 +16,8 @@ export interface MemoEditorRef {
 const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, mode }, ref) => {
   const [title, setTitle] = useState(memo?.title || '');
   const [showTitle, setShowTitle] = useState(!!memo?.title);
+  const [showTitleModal, setShowTitleModal] = useState(false);
+  const [tempTitle, setTempTitle] = useState('');
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const titleRef = useRef(title);
   const contentRef = useRef(memo?.content || '');
@@ -94,6 +96,24 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
     saveMemo();
   };
 
+  const handleAddTitle = () => {
+    setTempTitle(title);
+    setShowTitleModal(true);
+  };
+
+  const handleSaveTitle = () => {
+    setTitle(tempTitle);
+    setShowTitle(true);
+    setShowTitleModal(false);
+    titleRef.current = tempTitle;
+    saveMemo();
+  };
+
+  const handleCancelTitle = () => {
+    setTempTitle('');
+    setShowTitleModal(false);
+  };
+
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
     setContent(newContent);
@@ -112,74 +132,140 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
 
   if (mode === 'canvas') {
     return (
-      <div className="flex-1 flex flex-col">
-        {!showTitle && (
-          <button
-            onClick={() => setShowTitle(true)}
-            className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 text-left"
-          >
-            + 제목 추가
-          </button>
-        )}
-        {showTitle && (
-          <input
-            type="text"
-            value={title}
-            onChange={handleTitleChange}
-            placeholder="제목"
-            className="w-full px-3 py-2 border-0 border-b border-gray-200 focus:outline-none focus:border-gray-300"
-          />
-        )}
-        <div className="flex-1 flex">
-          <div className="flex-1">
-            <DrawingCanvas
-              canvasData={memo?.canvas_data}
-              onCanvasChange={async (data) => {
-                await window.electronAPI.memo.update(memoId, { canvas_data: data });
-              }}
-              onTextRecognized={handleTextRecognized}
-            />
+      <>
+        <div className="h-full flex flex-col">
+          {showTitle && (
+            <div className="shrink-0 px-3 py-2 font-medium text-gray-700 cursor-pointer hover:bg-yellow-100" onClick={handleAddTitle}>
+              {title || '제목'}
+            </div>
+          )}
+          <div className="flex-1 flex min-h-0 overflow-hidden pb-12">
+            <div className="flex-1">
+              <DrawingCanvas
+                canvasData={memo?.canvas_data}
+                onCanvasChange={async (data) => {
+                  await window.electronAPI.memo.update(memoId, { canvas_data: data });
+                }}
+                onTextRecognized={handleTextRecognized}
+              />
+            </div>
+            <div className="w-64 border-l border-yellow-200 flex flex-col bg-yellow-50">
+              <h3 className="px-3 py-2 font-bold text-sm">인식된 텍스트</h3>
+              <textarea
+                value={content}
+                onChange={handleContentChange}
+                placeholder="인식된 텍스트가 여기에 표시됩니다..."
+                className="flex-1 w-full px-3 py-2 border-0 resize-none focus:outline-none bg-transparent placeholder-gray-400"
+              />
+            </div>
           </div>
-          <div className="w-64 border-l border-gray-200 flex flex-col">
-            <h3 className="px-3 py-2 font-bold text-sm border-b border-gray-200">인식된 텍스트</h3>
-            <textarea
-              value={content}
-              onChange={handleContentChange}
-              placeholder="인식된 텍스트가 여기에 표시됩니다..."
-              className="flex-1 w-full px-3 py-2 border-0 resize-none focus:outline-none"
-            />
-          </div>
+          {!showTitle && (
+            <div className="absolute bottom-4 left-3">
+              <span
+                onClick={handleAddTitle}
+                className="text-sm text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
+              >
+                + 제목 추가
+              </span>
+            </div>
+          )}
         </div>
-      </div>
+        {showTitleModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handleCancelTitle}>
+            <div className="bg-white rounded-lg shadow-xl p-6 w-96" onClick={(e) => e.stopPropagation()}>
+              <h2 className="text-lg font-bold mb-4">제목 입력</h2>
+              <input
+                type="text"
+                value={tempTitle}
+                onChange={(e) => setTempTitle(e.target.value)}
+                placeholder="제목을 입력하세요"
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveTitle();
+                  if (e.key === 'Escape') handleCancelTitle();
+                }}
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={handleCancelTitle}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleSaveTitle}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                >
+                  저장
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col">
-      {!showTitle && (
-        <button
-          onClick={() => setShowTitle(true)}
-          className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 text-left"
-        >
-          + 제목 추가
-        </button>
-      )}
-      {showTitle && (
-        <input
-          type="text"
-          value={title}
-          onChange={handleTitleChange}
-          placeholder="제목"
-          className="w-full px-3 py-2 border-0 border-b border-gray-200 focus:outline-none focus:border-gray-300 font-medium"
+    <>
+      <div className="h-full flex flex-col relative">
+        {showTitle && (
+          <div className="shrink-0 px-3 py-2 font-medium text-gray-700 cursor-pointer hover:bg-yellow-100" onClick={handleAddTitle}>
+            {title || '제목'}
+          </div>
+        )}
+        <textarea
+          value={content}
+          onChange={handleContentChange}
+          placeholder="메모를 입력하세요..."
+          className="flex-1 w-full px-3 py-2 border-0 resize-none focus:outline-none bg-transparent placeholder-gray-400 overflow-auto pb-12"
         />
+        {!showTitle && (
+          <div className="absolute bottom-4 left-3">
+            <span
+              onClick={handleAddTitle}
+              className="text-sm text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
+            >
+              + 제목 추가
+            </span>
+          </div>
+        )}
+      </div>
+      {showTitleModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handleCancelTitle}>
+          <div className="bg-white rounded-lg shadow-xl p-6 w-96" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-bold mb-4">제목 입력</h2>
+            <input
+              type="text"
+              value={tempTitle}
+              onChange={(e) => setTempTitle(e.target.value)}
+              placeholder="제목을 입력하세요"
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSaveTitle();
+                if (e.key === 'Escape') handleCancelTitle();
+              }}
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={handleCancelTitle}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSaveTitle}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        </div>
       )}
-      <textarea
-        value={content}
-        onChange={handleContentChange}
-        placeholder="메모를 입력하세요..."
-        className="flex-1 w-full px-3 py-2 border-0 resize-none focus:outline-none"
-      />
-    </div>
+    </>
   );
 });
 
