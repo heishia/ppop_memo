@@ -106,4 +106,22 @@ export function setupIpcHandlers(windowManager: WindowManager): void {
   ipcMain.on('window:getId', (event) => {
     event.returnValue = event.sender.id;
   });
+
+  ipcMain.handle('window:minimize', async (event) => {
+    const win = windowManager.getWindow(event.sender.id);
+    if (win) {
+      win.minimize();
+      return { success: true };
+    }
+    return { success: false };
+  });
+
+  ipcMain.handle('window:close', async (event) => {
+    const win = windowManager.getWindow(event.sender.id);
+    if (win) {
+      win.close();
+      return { success: true };
+    }
+    return { success: false };
+  });
 }

@@ -22,12 +22,35 @@ const PinIcon = ({ filled }: { filled: boolean }) => (
   </svg>
 );
 
+const MoreIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="1"/>
+    <circle cx="12" cy="5" r="1"/>
+    <circle cx="12" cy="19" r="1"/>
+  </svg>
+);
+
+const MinimizeIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+);
+
+const CloseIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"/>
+    <line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);
+
 function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
   const [memo, setMemo] = useState(initialMemo);
   const [mode, setMode] = useState<'text' | 'canvas'>(initialMemo.mode || 'text');
   const [alwaysOnTop, setAlwaysOnTop] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const editorRef = useRef<{ saveNow: () => Promise<void> } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadMemo = async () => {
@@ -56,6 +79,22 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
     });
   }, [memoId]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMenu]);
+
   const handleModeToggle = async (newMode: 'text' | 'canvas') => {
     setMode(newMode);
     await window.electronAPI.memo.update(memoId, { mode: newMode });
@@ -76,26 +115,88 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
     }
   };
 
+  const handleMinimize = async () => {
+    await window.electronAPI.window.minimize();
+  };
+
+  const handleClose = async () => {
+    await window.electronAPI.window.close();
+  };
+
+  const handleMemoManagement = () => {
+    setShowMenu(false);
+  };
+
+  const handleSettings = () => {
+    setShowMenu(false);
+  };
+
   return (
-    <div className="h-screen flex flex-col">
-      <div className="p-2 flex justify-end items-center gap-1">
-        <button
-          onClick={handleManualSave}
-          className={`p-1.5 rounded transition-colors ${isSaving ? 'bg-green-500 text-white' : 'hover:bg-gray-200 text-gray-600'}`}
-          title="저장"
-        >
-          <SaveIcon />
-        </button>
-        <button
-          onClick={handleAlwaysOnTopToggle}
-          className={`p-1.5 rounded transition-colors ${alwaysOnTop ? 'bg-blue-500 text-white' : 'hover:bg-gray-200 text-gray-600'}`}
-          title={alwaysOnTop ? '고정 해제' : '항상 위에 고정'}
-        >
-          <PinIcon filled={alwaysOnTop} />
-        </button>
+    <div className="h-screen flex flex-col bg-yellow-50">
+      <div className="bg-yellow-50 border-b border-yellow-200 flex items-center justify-between" style={{ WebkitAppRegion: 'drag' } as any}>
+        <div className="flex-1 px-3 py-1.5 text-xs font-medium text-gray-600">
+          PPOP Memo
+        </div>
+        <div className="flex items-center gap-0.5 pr-1" style={{ WebkitAppRegion: 'no-drag' } as any}>
+          <button
+            onClick={handleManualSave}
+            className={`p-1 rounded transition-colors ${isSaving ? 'bg-green-500 text-white' : 'hover:bg-yellow-200 text-gray-600'}`}
+            title="저장"
+          >
+            <SaveIcon />
+          </button>
+          <button
+            onClick={handleAlwaysOnTopToggle}
+            className={`p-1 rounded transition-colors ${alwaysOnTop ? 'bg-blue-500 text-white' : 'hover:bg-yellow-200 text-gray-600'}`}
+            title={alwaysOnTop ? '고정 해제' : '항상 위에 고정'}
+          >
+            <PinIcon filled={alwaysOnTop} />
+          </button>
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="p-1 rounded hover:bg-yellow-200 text-gray-600 transition-colors"
+              title="메뉴"
+            >
+              <MoreIcon />
+            </button>
+            {showMenu && (
+              <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50">
+                <button
+                  onClick={handleMemoManagement}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  메모 관리
+                </button>
+                <button
+                  onClick={handleSettings}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  설정
+                </button>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={handleMinimize}
+            className="p-1 rounded hover:bg-yellow-200 text-gray-600 transition-colors"
+            title="최소화"
+          >
+            <MinimizeIcon />
+          </button>
+          <button
+            onClick={handleClose}
+            className="p-1 rounded hover:bg-red-500 hover:text-white text-gray-600 transition-colors"
+            title="닫기"
+          >
+            <CloseIcon />
+          </button>
+        </div>
       </div>
-      <MemoEditor ref={editorRef} memoId={memoId} memo={memo} mode={mode} />
-      <ModeToggleButton mode={mode} onToggle={handleModeToggle} />
+      <div className="flex-1 relative bg-yellow-50">
+        <MemoEditor ref={editorRef} memoId={memoId} memo={memo} mode={mode} />
+        <ModeToggleButton mode={mode} onToggle={handleModeToggle} />
+      </div>
     </div>
   );
 }

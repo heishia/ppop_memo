@@ -21,6 +21,8 @@ declare global {
         setAlwaysOnTop: (windowId: number, alwaysOnTop: boolean) => Promise<any>;
         saveState: (windowId: number, state: any) => Promise<any>;
         getId: () => number;
+        minimize: () => Promise<any>;
+        close: () => Promise<any>;
       };
       on: (channel: string, callback: (...args: any[]) => void) => void;
     };

@@ -14,7 +14,7 @@ function ModeToggleButton({ mode, onToggle }: ModeToggleButtonProps) {
   return (
     <button
       onClick={() => onToggle(mode === 'text' ? 'canvas' : 'text')}
-      className="fixed bottom-4 right-4 px-4 py-2 bg-blue-500 text-white rounded shadow-lg hover:bg-blue-600"
+      className="absolute bottom-3 right-3 px-3 py-1.5 bg-blue-500 text-white text-sm rounded shadow hover:bg-blue-600 transition-colors"
     >
       {mode === 'text' ? 'Canvas 모드' : 'Text 모드'}
     </button>

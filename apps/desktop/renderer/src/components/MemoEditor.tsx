@@ -79,11 +79,11 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
 
   if (mode === 'canvas') {
     return (
-      <div className="flex-1 flex flex-col p-4">
+      <div className="flex-1 flex flex-col">
         {!showTitle && (
           <button
             onClick={() => setShowTitle(true)}
-            className="mb-2 text-sm text-gray-500 hover:text-gray-700 text-left"
+            className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 text-left"
           >
             + 제목 추가
           </button>
@@ -94,10 +94,10 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
             value={title}
             onChange={handleTitleChange}
             placeholder="제목"
-            className="w-full mb-4 p-2 border rounded"
+            className="w-full px-3 py-2 border-0 border-b border-gray-200 focus:outline-none focus:border-gray-300"
           />
         )}
-        <div className="flex-1 flex gap-4">
+        <div className="flex-1 flex">
           <div className="flex-1">
             <DrawingCanvas
               canvasData={memo?.canvas_data}
@@ -107,13 +107,13 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
               onTextRecognized={handleTextRecognized}
             />
           </div>
-          <div className="w-64 border rounded p-2">
-            <h3 className="font-bold mb-2">인식된 텍스트</h3>
+          <div className="w-64 border-l border-gray-200 flex flex-col">
+            <h3 className="px-3 py-2 font-bold text-sm border-b border-gray-200">인식된 텍스트</h3>
             <textarea
               value={content}
               onChange={handleContentChange}
               placeholder="인식된 텍스트가 여기에 표시됩니다..."
-              className="w-full h-full p-2 border rounded resize-none"
+              className="flex-1 w-full px-3 py-2 border-0 resize-none focus:outline-none"
             />
           </div>
         </div>
@@ -122,11 +122,11 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
   }
 
   return (
-    <div className="flex-1 flex flex-col p-4">
+    <div className="flex-1 flex flex-col">
       {!showTitle && (
         <button
           onClick={() => setShowTitle(true)}
-          className="mb-2 text-sm text-gray-500 hover:text-gray-700 text-left"
+          className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 text-left"
         >
           + 제목 추가
         </button>
@@ -137,14 +137,14 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
           value={title}
           onChange={handleTitleChange}
           placeholder="제목"
-          className="w-full mb-4 p-2 border rounded"
+          className="w-full px-3 py-2 border-0 border-b border-gray-200 focus:outline-none focus:border-gray-300 font-medium"
         />
       )}
       <textarea
         value={content}
         onChange={handleContentChange}
         placeholder="메모를 입력하세요..."
-        className="flex-1 w-full p-2 border rounded resize-none"
+        className="flex-1 w-full px-3 py-2 border-0 resize-none focus:outline-none"
       />
     </div>
   );

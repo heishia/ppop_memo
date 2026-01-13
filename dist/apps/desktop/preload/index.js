@@ -20,6 +20,8 @@ electron_1.contextBridge.exposeInMainWorld('electronAPI', {
         setAlwaysOnTop: (windowId, alwaysOnTop) => electron_1.ipcRenderer.invoke('window:setAlwaysOnTop', windowId, alwaysOnTop),
         saveState: (windowId, state) => electron_1.ipcRenderer.invoke('window:saveState', windowId, state),
         getId: () => electron_1.ipcRenderer.sendSync('window:getId'),
+        minimize: () => electron_1.ipcRenderer.invoke('window:minimize'),
+        close: () => electron_1.ipcRenderer.invoke('window:close'),
     },
     on: (channel, callback) => {
         electron_1.ipcRenderer.on(channel, (_, ...args) => callback(...args));

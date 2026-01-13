@@ -52,8 +52,9 @@ class WindowManager {
                 nodeIntegration: false,
                 contextIsolation: true,
             },
-            frame: true,
+            frame: false,
             alwaysOnTop: false,
+            titleBarStyle: 'hidden',
         });
         if (process.env.NODE_ENV === 'development') {
             const port = process.env.VITE_PORT || '3000';
