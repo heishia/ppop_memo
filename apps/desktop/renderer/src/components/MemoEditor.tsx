@@ -7,13 +7,14 @@ interface MemoEditorProps {
   memoId: number;
   memo: any;
   mode: 'text' | 'canvas';
+  canvasClearRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 export interface MemoEditorRef {
   saveNow: () => Promise<void>;
 }
 
-const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, mode }, ref) => {
+const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, mode, canvasClearRef }, ref) => {
   const [title, setTitle] = useState(memo?.title || '');
   const [showTitle, setShowTitle] = useState(!!memo?.title);
   const [showTitleModal, setShowTitleModal] = useState(false);
@@ -137,6 +138,7 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
               onCanvasChange={async (data) => {
                 await window.electronAPI.memo.update(memoId, { canvas_data: data });
               }}
+              clearRef={canvasClearRef}
             />
           </div>
           {!showTitle && (

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MemoEditor from './MemoEditor';
-import ModeToggleButton from './ModeToggleButton';
 import MemoManagement from './MemoManagement';
 
 interface MemoWindowProps {
@@ -51,6 +50,12 @@ const PlusIcon = () => (
   </svg>
 );
 
+const RefreshIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+  </svg>
+);
+
 function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
   const [memo, setMemo] = useState(initialMemo);
   const [mode, setMode] = useState<'text' | 'canvas'>(initialMemo.mode || 'text');
@@ -59,6 +64,7 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showMemoManagement, setShowMemoManagement] = useState(false);
   const editorRef = useRef<{ saveNow: () => Promise<void> } | null>(null);
+  const canvasClearRef = useRef<(() => void) | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -173,6 +179,12 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
     await window.electronAPI.window.createNew();
   };
 
+  const handleCanvasClear = () => {
+    if (canvasClearRef.current) {
+      canvasClearRef.current();
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col bg-yellow-50">
       <div className="bg-yellow-50 border-b border-yellow-200 flex items-center justify-between" style={{ WebkitAppRegion: 'drag' } as any}>
@@ -243,8 +255,24 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
         </div>
       </div>
       <div className="flex-1 relative bg-yellow-50">
-        <MemoEditor ref={editorRef} memoId={memoId} memo={memo} mode={mode} />
-        <ModeToggleButton mode={mode} onToggle={handleModeToggle} />
+        <MemoEditor ref={editorRef} memoId={memoId} memo={memo} mode={mode} canvasClearRef={canvasClearRef} />
+        <div className="absolute bottom-3 right-3 flex gap-2">
+          {mode === 'canvas' && (
+            <button
+              onClick={handleCanvasClear}
+              className="px-3 py-1.5 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded shadow transition-colors flex items-center gap-1"
+              title="캔버스 초기화"
+            >
+              <RefreshIcon />
+            </button>
+          )}
+          <button
+            onClick={() => handleModeToggle(mode === 'text' ? 'canvas' : 'text')}
+            className="px-3 py-1.5 bg-blue-500 text-white text-sm rounded shadow hover:bg-blue-600 transition-colors"
+          >
+            {mode === 'text' ? 'Canvas 모드' : 'Text 모드'}
+          </button>
+        </div>
       </div>
       {showMemoManagement && (
         <MemoManagement
