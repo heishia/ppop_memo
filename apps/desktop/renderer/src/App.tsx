@@ -25,6 +25,11 @@ declare global {
         close: () => Promise<any>;
         createNew: () => Promise<any>;
       };
+      settings: {
+        get: (key: string) => Promise<string | null>;
+        set: (key: string, value: string) => Promise<any>;
+        getAll: () => Promise<Record<string, string>>;
+      };
       on: (channel: string, callback: (...args: any[]) => void) => void;
     };
   }

@@ -80,6 +80,12 @@ function initDatabase() {
       FOREIGN KEY (memo_id) REFERENCES memos(id),
       FOREIGN KEY (tag_id) REFERENCES tags(id)
     );
+    
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 }
 function getDatabase() {

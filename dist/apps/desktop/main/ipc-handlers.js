@@ -158,4 +158,23 @@ function setupIpcHandlers(windowManager) {
         const newWin = windowManager.createNewMemoWindow();
         return { success: true, windowId: newWin.id };
     });
+    electron_1.ipcMain.handle('settings:get', async (_, key) => {
+        const db = (0, database_1.getDatabase)();
+        const setting = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
+        return setting ? setting.value : null;
+    });
+    electron_1.ipcMain.handle('settings:set', async (_, key, value) => {
+        const db = (0, database_1.getDatabase)();
+        db.prepare('INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)').run(key, value);
+        return { success: true };
+    });
+    electron_1.ipcMain.handle('settings:getAll', async () => {
+        const db = (0, database_1.getDatabase)();
+        const settings = db.prepare('SELECT key, value FROM settings').all();
+        const result = {};
+        settings.forEach(setting => {
+            result[setting.key] = setting.value;
+        });
+        return result;
+    });
 }

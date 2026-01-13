@@ -25,6 +25,11 @@ electron_1.contextBridge.exposeInMainWorld('electronAPI', {
         loadMemo: (memoId) => electron_1.ipcRenderer.invoke('window:loadMemo', memoId),
         createNew: () => electron_1.ipcRenderer.invoke('window:createNew'),
     },
+    settings: {
+        get: (key) => electron_1.ipcRenderer.invoke('settings:get', key),
+        set: (key, value) => electron_1.ipcRenderer.invoke('settings:set', key, value),
+        getAll: () => electron_1.ipcRenderer.invoke('settings:getAll'),
+    },
     on: (channel, callback) => {
         electron_1.ipcRenderer.on(channel, (_, ...args) => callback(...args));
     },

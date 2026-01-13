@@ -145,9 +145,9 @@ function MemoManagement({ onClose, onLoadMemo }: MemoManagementProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-[800px] h-[600px] flex flex-col">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl h-full max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-lg font-semibold text-gray-800">메모 관리</h2>
           <button
             onClick={onClose}
@@ -157,12 +157,12 @@ function MemoManagement({ onClose, onLoadMemo }: MemoManagementProps) {
           </button>
         </div>
 
-        <div className="flex-1 flex overflow-hidden">
-          <div className="w-48 border-r border-gray-200 flex flex-col">
-            <div className="p-3 border-b border-gray-200">
+        <div className="flex-1 flex overflow-hidden min-h-0">
+          <div className="w-48 md:w-56 lg:w-64 border-r border-gray-200 flex flex-col flex-shrink-0">
+            <div className="p-2 md:p-3 border-b border-gray-200 flex-shrink-0">
               <button
                 onClick={() => setSelectedFolder(null)}
-                className={`w-full px-3 py-2 rounded text-sm text-left transition-colors ${
+                className={`w-full px-2 md:px-3 py-2 rounded text-xs md:text-sm text-left transition-colors ${
                   selectedFolder === null ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-700'
                 }`}
               >
@@ -170,12 +170,12 @@ function MemoManagement({ onClose, onLoadMemo }: MemoManagementProps) {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3">
+            <div className="flex-1 overflow-y-auto p-2 md:p-3 min-h-0">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-semibold text-gray-500 uppercase">폴더</span>
                 <button
                   onClick={() => setShowNewFolderInput(true)}
-                  className="text-xs text-blue-600 hover:text-blue-700"
+                  className="text-xs text-blue-600 hover:text-blue-700 whitespace-nowrap"
                 >
                   + 새 폴더
                 </button>
@@ -190,7 +190,7 @@ function MemoManagement({ onClose, onLoadMemo }: MemoManagementProps) {
                     onKeyPress={(e) => e.key === 'Enter' && handleCreateFolder()}
                     onBlur={handleCreateFolder}
                     placeholder="폴더 이름"
-                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                    className="w-full px-2 py-1 text-xs md:text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500"
                     autoFocus
                   />
                 </div>
@@ -199,18 +199,18 @@ function MemoManagement({ onClose, onLoadMemo }: MemoManagementProps) {
               {folders.map(folder => (
                 <div
                   key={folder.id}
-                  className={`flex items-center justify-between px-3 py-2 rounded mb-1 cursor-pointer transition-colors ${
+                  className={`flex items-center justify-between px-2 md:px-3 py-2 rounded mb-1 cursor-pointer transition-colors ${
                     selectedFolder === folder.id ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-700'
                   }`}
                   onClick={() => setSelectedFolder(folder.id)}
                 >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="flex items-center gap-1 md:gap-2 flex-1 min-w-0">
                     <FolderIcon />
-                    <span className="text-sm truncate">{folder.name}</span>
+                    <span className="text-xs md:text-sm truncate">{folder.name}</span>
                   </div>
                   <button
                     onClick={(e) => handleDeleteFolder(folder.id, e)}
-                    className="p-1 rounded hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors"
+                    className="p-1 rounded hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors flex-shrink-0"
                   >
                     <TrashIcon />
                   </button>
@@ -219,56 +219,58 @@ function MemoManagement({ onClose, onLoadMemo }: MemoManagementProps) {
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col">
-            <div className="p-3 border-b border-gray-200">
+          <div className="flex-1 flex flex-col min-w-0">
+            <div className="p-2 md:p-3 border-b border-gray-200 flex-shrink-0">
               <div className="flex gap-2">
-                <div className="flex-1 relative">
+                <div className="flex-1 relative min-w-0">
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                     placeholder="메모 검색..."
-                    className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    className="w-full pl-8 md:pl-9 pr-3 py-2 text-sm md:text-base border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                   />
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <div className="absolute left-2 md:left-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <SearchIcon />
                   </div>
                 </div>
                 <button
                   onClick={handleSearch}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-3 md:px-4 py-2 bg-blue-600 text-white text-sm md:text-base rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
                 >
                   검색
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3">
+            <div className="flex-1 overflow-y-auto p-2 md:p-3 min-h-0">
               {filteredMemos.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-gray-400">
                   <div className="text-center">
-                    <MemoIcon />
-                    <p className="mt-2 text-sm">메모가 없습니다</p>
+                    <div className="flex justify-center mb-2">
+                      <MemoIcon />
+                    </div>
+                    <p className="text-xs md:text-sm">메모가 없습니다</p>
                   </div>
                 </div>
               ) : (
-                <div className="grid gap-2">
+                <div className="grid gap-2 auto-rows-max">
                   {filteredMemos.map(memo => (
                     <div
                       key={memo.id}
                       onClick={() => handleMemoClick(memo.id)}
-                      className="p-3 border border-gray-200 rounded-lg hover:border-blue-500 hover:shadow-md cursor-pointer transition-all"
+                      className="p-2 md:p-3 border border-gray-200 rounded-lg hover:border-blue-500 hover:shadow-md cursor-pointer transition-all"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-1 md:gap-2 mb-1">
                             <MemoIcon />
                             <span className="text-xs text-gray-500">
                               {memo.mode === 'canvas' ? '캔버스' : '텍스트'}
                             </span>
                           </div>
-                          <h3 className="font-medium text-gray-800 truncate mb-1">
+                          <h3 className="text-sm md:text-base font-medium text-gray-800 truncate mb-1">
                             {getMemoPreview(memo)}
                           </h3>
                           <p className="text-xs text-gray-500">
@@ -277,7 +279,7 @@ function MemoManagement({ onClose, onLoadMemo }: MemoManagementProps) {
                         </div>
                         <button
                           onClick={(e) => handleDeleteMemo(memo.id, e)}
-                          className="p-1.5 rounded hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors"
+                          className="p-1 md:p-1.5 rounded hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors flex-shrink-0"
                         >
                           <TrashIcon />
                         </button>

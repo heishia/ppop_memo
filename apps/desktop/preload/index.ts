@@ -24,6 +24,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     loadMemo: (memoId: number) => ipcRenderer.invoke('window:loadMemo', memoId),
     createNew: () => ipcRenderer.invoke('window:createNew'),
   },
+  settings: {
+    get: (key: string) => ipcRenderer.invoke('settings:get', key),
+    set: (key: string, value: string) => ipcRenderer.invoke('settings:set', key, value),
+    getAll: () => ipcRenderer.invoke('settings:getAll'),
+  },
   on: (channel: string, callback: (...args: any[]) => void) => {
     ipcRenderer.on(channel, (_, ...args) => callback(...args));
   },

@@ -181,4 +181,26 @@ export function setupIpcHandlers(windowManager: WindowManager): void {
     const newWin = windowManager.createNewMemoWindow();
     return { success: true, windowId: newWin.id };
   });
+
+  ipcMain.handle('settings:get', async (_, key: string) => {
+    const db = getDatabase();
+    const setting = db.prepare('SELECT value FROM settings WHERE key = ?').get(key) as { value: string } | undefined;
+    return setting ? setting.value : null;
+  });
+
+  ipcMain.handle('settings:set', async (_, key: string, value: string) => {
+    const db = getDatabase();
+    db.prepare('INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)').run(key, value);
+    return { success: true };
+  });
+
+  ipcMain.handle('settings:getAll', async () => {
+    const db = getDatabase();
+    const settings = db.prepare('SELECT key, value FROM settings').all() as { key: string; value: string }[];
+    const result: Record<string, string> = {};
+    settings.forEach(setting => {
+      result[setting.key] = setting.value;
+    });
+    return result;
+  });
 }

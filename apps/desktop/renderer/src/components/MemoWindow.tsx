@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MemoEditor from './MemoEditor';
 import MemoManagement from './MemoManagement';
+import Settings from './Settings';
+import Toast from './Toast';
 
 interface MemoWindowProps {
   memoId: number;
@@ -63,6 +65,8 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showMemoManagement, setShowMemoManagement] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const editorRef = useRef<{ saveNow: () => Promise<void> } | null>(null);
   const canvasClearRef = useRef<(() => void) | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -115,6 +119,15 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
       await editorRef.current.saveNow();
     }
     
+    const hasContent = (memo?.content && memo.content.trim() !== '') || 
+                       (memo?.canvas_data && memo.canvas_data !== null);
+    
+    if (!hasContent) {
+      await window.electronAPI.memo.update(memoId, { mode: newMode });
+      setMode(newMode);
+      return;
+    }
+    
     let baseTitle = memo?.title || '제목 없음';
     baseTitle = baseTitle.replace(/\s*\((캔버스|텍스트)\)\s*\d{4}-\d{2}-\d{2}-오전|오후\s*\d{2}-\d{2}.*$/g, '').trim();
     
@@ -150,6 +163,7 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
     if (editorRef.current) {
       setIsSaving(true);
       await editorRef.current.saveNow();
+      setToast({ message: '저장되었습니다', type: 'success' });
       setTimeout(() => setIsSaving(false), 500);
     }
   };
@@ -169,6 +183,7 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
 
   const handleSettings = () => {
     setShowMenu(false);
+    setShowSettings(true);
   };
 
   const handleLoadMemo = async (loadMemoId: number) => {
@@ -278,6 +293,16 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
         <MemoManagement
           onClose={() => setShowMemoManagement(false)}
           onLoadMemo={handleLoadMemo}
+        />
+      )}
+      {showSettings && (
+        <Settings onClose={() => setShowSettings(false)} />
+      )}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
     </div>
