@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
   memo: {
-    create: () => ipcRenderer.invoke('memo:create'),
+    create: (data?: any) => ipcRenderer.invoke('memo:create', data),
     get: (id: number) => ipcRenderer.invoke('memo:get', id),
     update: (id: number, data: any) => ipcRenderer.invoke('memo:update', id, data),
     delete: (id: number) => ipcRenderer.invoke('memo:delete', id),
@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getId: () => ipcRenderer.sendSync('window:getId'),
     minimize: () => ipcRenderer.invoke('window:minimize'),
     close: () => ipcRenderer.invoke('window:close'),
+    loadMemo: (memoId: number) => ipcRenderer.invoke('window:loadMemo', memoId),
   },
   on: (channel: string, callback: (...args: any[]) => void) => {
     ipcRenderer.on(channel, (_, ...args) => callback(...args));

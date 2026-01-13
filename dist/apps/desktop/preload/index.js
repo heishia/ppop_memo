@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 electron_1.contextBridge.exposeInMainWorld('electronAPI', {
     memo: {
-        create: () => electron_1.ipcRenderer.invoke('memo:create'),
+        create: (data) => electron_1.ipcRenderer.invoke('memo:create', data),
         get: (id) => electron_1.ipcRenderer.invoke('memo:get', id),
         update: (id, data) => electron_1.ipcRenderer.invoke('memo:update', id, data),
         delete: (id) => electron_1.ipcRenderer.invoke('memo:delete', id),
@@ -22,6 +22,7 @@ electron_1.contextBridge.exposeInMainWorld('electronAPI', {
         getId: () => electron_1.ipcRenderer.sendSync('window:getId'),
         minimize: () => electron_1.ipcRenderer.invoke('window:minimize'),
         close: () => electron_1.ipcRenderer.invoke('window:close'),
+        loadMemo: (memoId) => electron_1.ipcRenderer.invoke('window:loadMemo', memoId),
     },
     on: (channel, callback) => {
         electron_1.ipcRenderer.on(channel, (_, ...args) => callback(...args));

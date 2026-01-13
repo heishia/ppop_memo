@@ -7,10 +7,9 @@ import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut';
 interface DrawingCanvasProps {
   canvasData?: string;
   onCanvasChange: (data: string) => void;
-  onTextRecognized?: (text: string) => void;
 }
 
-function DrawingCanvas({ canvasData, onCanvasChange, onTextRecognized }: DrawingCanvasProps) {
+function DrawingCanvas({ canvasData, onCanvasChange }: DrawingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
@@ -76,9 +75,13 @@ function DrawingCanvas({ canvasData, onCanvasChange, onTextRecognized }: Drawing
   useEffect(() => {
     if (!canvasRef.current) return;
     
+    const container = canvasRef.current.parentElement;
+    const width = container?.clientWidth || 800;
+    const height = container?.clientHeight || 600;
+    
     const canvas = new fabric.Canvas(canvasRef.current, {
-      width: 800,
-      height: 600,
+      width: width,
+      height: height,
       isDrawingMode: true,
     });
     
@@ -137,6 +140,8 @@ function DrawingCanvas({ canvasData, onCanvasChange, onTextRecognized }: Drawing
     setIsRecognizing(true);
     try {
       const paths = canvas.getObjects().filter(obj => obj.type === 'path') as fabric.Path[];
+      if (paths.length === 0) return;
+      
       const strokes = paths.map(path => {
         const pathData = path.path;
         return pathData.map((point: any[]) => ({
@@ -150,9 +155,31 @@ function DrawingCanvas({ canvasData, onCanvasChange, onTextRecognized }: Drawing
       const result = await HandwritingService.recognizeHandwriting(strokes);
       
       if (result && HandwritingService.shouldConvertToText(result)) {
-        if (onTextRecognized) {
-          onTextRecognized(result.text);
-        }
+        const bounds = {
+          minX: Math.min(...strokes.map(s => s.x)),
+          maxX: Math.max(...strokes.map(s => s.x)),
+          minY: Math.min(...strokes.map(s => s.y)),
+          maxY: Math.max(...strokes.map(s => s.y)),
+        };
+        
+        const text = new fabric.Text(result.text, {
+          left: bounds.minX,
+          top: bounds.minY,
+          fontSize: 20,
+          fill: '#000000',
+          selectable: true,
+          editable: true,
+        });
+        
+        paths.forEach(path => canvas.remove(path));
+        
+        canvas.add(text);
+        canvas.setActiveObject(text);
+        canvas.renderAll();
+        
+        const json = JSON.stringify(canvas.toJSON());
+        saveHistory(canvas);
+        onCanvasChange(json);
       }
     } catch (error) {
       console.error('Recognition error:', error);
@@ -162,7 +189,7 @@ function DrawingCanvas({ canvasData, onCanvasChange, onTextRecognized }: Drawing
   };
   
   return (
-    <div className="w-full h-full border rounded relative">
+    <div className="w-full h-full border rounded relative overflow-hidden">
       <canvas ref={canvasRef} />
       {isRecognizing && (
         <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded text-sm">
@@ -171,7 +198,7 @@ function DrawingCanvas({ canvasData, onCanvasChange, onTextRecognized }: Drawing
       )}
       <button
         onClick={clearCanvas}
-        className="absolute bottom-4 right-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full shadow-lg transition-colors duration-200 flex items-center gap-2"
+        className="absolute bottom-4 right-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full shadow-lg transition-colors duration-200 flex items-center gap-2 z-10"
         title="캔버스 초기화 (모두 지우기)"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

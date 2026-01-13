@@ -3,8 +3,51 @@ import { getDatabase } from './database';
 import { WindowManager } from './window-manager';
 
 export function setupIpcHandlers(windowManager: WindowManager): void {
-  ipcMain.handle('memo:create', async () => {
+  ipcMain.handle('memo:create', async (_, data?: { title?: string; content?: string; canvas_data?: string | null; mode?: string; folder_id?: number | null }) => {
     const db = getDatabase();
+    
+    if (data) {
+      const columns: string[] = [];
+      const placeholders: string[] = [];
+      const values: any[] = [];
+      
+      if (data.title !== undefined) {
+        columns.push('title');
+        placeholders.push('?');
+        values.push(data.title);
+      }
+      if (data.content !== undefined) {
+        columns.push('content');
+        placeholders.push('?');
+        values.push(data.content);
+      }
+      if (data.canvas_data !== undefined) {
+        columns.push('canvas_data');
+        placeholders.push('?');
+        values.push(data.canvas_data);
+      }
+      if (data.mode !== undefined) {
+        columns.push('mode');
+        placeholders.push('?');
+        values.push(data.mode);
+      }
+      if (data.folder_id !== undefined) {
+        columns.push('folder_id');
+        placeholders.push('?');
+        values.push(data.folder_id);
+      }
+      
+      if (columns.length === 0) {
+        columns.push('content');
+        placeholders.push('?');
+        values.push('');
+      }
+      
+      const result = db.prepare(`INSERT INTO memos (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`).run(...values);
+      const newMemo = db.prepare('SELECT * FROM memos WHERE id = ?').get(result.lastInsertRowid);
+      return newMemo;
+    }
+    
     const result = db.prepare('INSERT INTO memos (content) VALUES (?)').run('');
     return { id: result.lastInsertRowid, content: '', mode: 'text' };
   });
@@ -120,6 +163,15 @@ export function setupIpcHandlers(windowManager: WindowManager): void {
     const win = windowManager.getWindow(event.sender.id);
     if (win) {
       win.close();
+      return { success: true };
+    }
+    return { success: false };
+  });
+
+  ipcMain.handle('window:loadMemo', async (event, memoId: number) => {
+    const currentWin = windowManager.getWindow(event.sender.id);
+    if (currentWin) {
+      currentWin.webContents.send('memo:load', memoId);
       return { success: true };
     }
     return { success: false };

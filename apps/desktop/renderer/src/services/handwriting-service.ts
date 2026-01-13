@@ -84,7 +84,7 @@ export class HandwritingService {
   
   private static async recognizeWithTesseract(strokes: any[]): Promise<RecognitionResult> {
     const { createWorker } = await import('tesseract.js');
-    const worker = await createWorker('eng');
+    const worker = await createWorker('kor');
     
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');

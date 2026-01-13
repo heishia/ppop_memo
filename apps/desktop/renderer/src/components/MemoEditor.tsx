@@ -121,14 +121,6 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
     saveMemo();
   };
 
-  const handleTextRecognized = async (text: string) => {
-    const newContent = content + '\n' + text;
-    setContent(newContent);
-    contentHistory.set(newContent);
-    await window.electronAPI.memo.update(memoId, {
-      content: newContent,
-    });
-  };
 
   if (mode === 'canvas') {
     return (
@@ -139,25 +131,13 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
               {title || '제목'}
             </div>
           )}
-          <div className="flex-1 flex min-h-0 overflow-hidden pb-12">
-            <div className="flex-1">
-              <DrawingCanvas
-                canvasData={memo?.canvas_data}
-                onCanvasChange={async (data) => {
-                  await window.electronAPI.memo.update(memoId, { canvas_data: data });
-                }}
-                onTextRecognized={handleTextRecognized}
-              />
-            </div>
-            <div className="w-64 border-l border-yellow-200 flex flex-col bg-yellow-50">
-              <h3 className="px-3 py-2 font-bold text-sm">인식된 텍스트</h3>
-              <textarea
-                value={content}
-                onChange={handleContentChange}
-                placeholder="인식된 텍스트가 여기에 표시됩니다..."
-                className="flex-1 w-full px-3 py-2 border-0 resize-none focus:outline-none bg-transparent placeholder-gray-400"
-              />
-            </div>
+          <div className="flex-1 min-h-0 overflow-hidden mb-12 relative">
+            <DrawingCanvas
+              canvasData={memo?.canvas_data}
+              onCanvasChange={async (data) => {
+                await window.electronAPI.memo.update(memoId, { canvas_data: data });
+              }}
+            />
           </div>
           {!showTitle && (
             <div className="absolute bottom-4 left-3">

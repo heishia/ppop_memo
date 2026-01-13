@@ -4,8 +4,46 @@ exports.setupIpcHandlers = setupIpcHandlers;
 const electron_1 = require("electron");
 const database_1 = require("./database");
 function setupIpcHandlers(windowManager) {
-    electron_1.ipcMain.handle('memo:create', async () => {
+    electron_1.ipcMain.handle('memo:create', async (_, data) => {
         const db = (0, database_1.getDatabase)();
+        if (data) {
+            const columns = [];
+            const placeholders = [];
+            const values = [];
+            if (data.title !== undefined) {
+                columns.push('title');
+                placeholders.push('?');
+                values.push(data.title);
+            }
+            if (data.content !== undefined) {
+                columns.push('content');
+                placeholders.push('?');
+                values.push(data.content);
+            }
+            if (data.canvas_data !== undefined) {
+                columns.push('canvas_data');
+                placeholders.push('?');
+                values.push(data.canvas_data);
+            }
+            if (data.mode !== undefined) {
+                columns.push('mode');
+                placeholders.push('?');
+                values.push(data.mode);
+            }
+            if (data.folder_id !== undefined) {
+                columns.push('folder_id');
+                placeholders.push('?');
+                values.push(data.folder_id);
+            }
+            if (columns.length === 0) {
+                columns.push('content');
+                placeholders.push('?');
+                values.push('');
+            }
+            const result = db.prepare(`INSERT INTO memos (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`).run(...values);
+            const newMemo = db.prepare('SELECT * FROM memos WHERE id = ?').get(result.lastInsertRowid);
+            return newMemo;
+        }
         const result = db.prepare('INSERT INTO memos (content) VALUES (?)').run('');
         return { id: result.lastInsertRowid, content: '', mode: 'text' };
     });
@@ -104,6 +142,14 @@ function setupIpcHandlers(windowManager) {
         const win = windowManager.getWindow(event.sender.id);
         if (win) {
             win.close();
+            return { success: true };
+        }
+        return { success: false };
+    });
+    electron_1.ipcMain.handle('window:loadMemo', async (event, memoId) => {
+        const currentWin = windowManager.getWindow(event.sender.id);
+        if (currentWin) {
+            currentWin.webContents.send('memo:load', memoId);
             return { success: true };
         }
         return { success: false };

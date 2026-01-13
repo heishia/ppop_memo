@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MemoEditor from './MemoEditor';
 import ModeToggleButton from './ModeToggleButton';
+import MemoManagement from './MemoManagement';
 
 interface MemoWindowProps {
   memoId: number;
@@ -49,6 +50,7 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
   const [alwaysOnTop, setAlwaysOnTop] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showMemoManagement, setShowMemoManagement] = useState(false);
   const editorRef = useRef<{ saveNow: () => Promise<void> } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -96,8 +98,30 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
   }, [showMenu]);
 
   const handleModeToggle = async (newMode: 'text' | 'canvas') => {
-    setMode(newMode);
-    await window.electronAPI.memo.update(memoId, { mode: newMode });
+    if (editorRef.current) {
+      await editorRef.current.saveNow();
+    }
+    
+    const currentTitle = memo?.title || '제목 없음';
+    const timestamp = new Date().toLocaleString('ko-KR', { 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    }).replace(/\. /g, '-').replace(/\./g, '').replace(':', '-');
+    
+    const newTitle = `${currentTitle} (${newMode === 'canvas' ? '캔버스' : '텍스트'}) ${timestamp}`;
+    
+    const newMemo = await window.electronAPI.memo.create({
+      title: newTitle,
+      content: newMode === 'text' ? (memo?.content || '') : '',
+      canvas_data: newMode === 'canvas' ? (memo?.canvas_data || null) : null,
+      mode: newMode,
+      folder_id: memo?.folder_id || null,
+    });
+    
+    await window.electronAPI.window.loadMemo(newMemo.id);
   };
 
   const handleAlwaysOnTopToggle = async () => {
@@ -125,10 +149,15 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
 
   const handleMemoManagement = () => {
     setShowMenu(false);
+    setShowMemoManagement(true);
   };
 
   const handleSettings = () => {
     setShowMenu(false);
+  };
+
+  const handleLoadMemo = async (loadMemoId: number) => {
+    await window.electronAPI.window.loadMemo(loadMemoId);
   };
 
   return (
