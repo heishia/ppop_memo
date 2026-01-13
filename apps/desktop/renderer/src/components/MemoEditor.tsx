@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import DrawingCanvas from './DrawingCanvas';
+import { useUndoRedo } from '../hooks/useUndoRedo';
+import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut';
 
 interface MemoEditorProps {
   memoId: number;
@@ -13,11 +15,13 @@ export interface MemoEditorRef {
 
 const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, mode }, ref) => {
   const [title, setTitle] = useState(memo?.title || '');
-  const [content, setContent] = useState(memo?.content || '');
   const [showTitle, setShowTitle] = useState(!!memo?.title);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const titleRef = useRef(title);
-  const contentRef = useRef(content);
+  const contentRef = useRef(memo?.content || '');
+  
+  const contentHistory = useUndoRedo<string>(memo?.content || '');
+  const [content, setContent] = useState(contentHistory.state);
 
   useEffect(() => {
     titleRef.current = title;
@@ -28,10 +32,35 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
   }, [content]);
 
   useEffect(() => {
+    setContent(contentHistory.state);
+    contentRef.current = contentHistory.state;
+  }, [contentHistory.state]);
+
+  useEffect(() => {
     setTitle(memo?.title || '');
-    setContent(memo?.content || '');
+    const newContent = memo?.content || '';
+    setContent(newContent);
+    contentHistory.reset(newContent);
     setShowTitle(!!memo?.title);
   }, [memo]);
+
+  useKeyboardShortcut('ctrl+z', () => {
+    if (mode === 'text' && contentHistory.canUndo) {
+      contentHistory.undo();
+    }
+  });
+
+  useKeyboardShortcut('ctrl+shift+z', () => {
+    if (mode === 'text' && contentHistory.canRedo) {
+      contentHistory.redo();
+    }
+  });
+
+  useKeyboardShortcut('ctrl+y', () => {
+    if (mode === 'text' && contentHistory.canRedo) {
+      contentHistory.redo();
+    }
+  });
 
   const saveNow = async () => {
     if (saveTimeoutRef.current) {
@@ -66,14 +95,18 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
   };
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setContent(e.target.value);
+    const newContent = e.target.value;
+    setContent(newContent);
+    contentHistory.set(newContent);
     saveMemo();
   };
 
   const handleTextRecognized = async (text: string) => {
-    setContent(prev => prev + '\n' + text);
+    const newContent = content + '\n' + text;
+    setContent(newContent);
+    contentHistory.set(newContent);
     await window.electronAPI.memo.update(memoId, {
-      content: content + '\n' + text,
+      content: newContent,
     });
   };
 
