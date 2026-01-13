@@ -17,8 +17,9 @@ export class WindowManager {
         nodeIntegration: false,
         contextIsolation: true,
       },
-      frame: true,
+      frame: false,
       alwaysOnTop: false,
+      titleBarStyle: 'hidden',
     });
     
     if (process.env.NODE_ENV === 'development') {

@@ -17,10 +17,7 @@ export function setupFileHandler(windowManager: WindowManager): void {
       if (ext === '.txt' || ext === '.md') {
         const content = fs.readFileSync(filePath, 'utf-8');
         const db = getDatabase();
-        const result = db.prepare('INSERT INTO memos (title, content) VALUES (?, ?)').run(
-          path.basename(filePath),
-          content
-        );
+        const result = db.prepare('INSERT INTO memos (content) VALUES (?)').run(content);
         
         const win = windowManager.createNewMemoWindow(result.lastInsertRowid as number);
         win.webContents.once('did-finish-load', () => {
@@ -38,10 +35,7 @@ export function setupFileHandler(windowManager: WindowManager): void {
       if (ext === '.txt' || ext === '.md') {
         const content = fs.readFileSync(filePath, 'utf-8');
         const db = getDatabase();
-        const result = db.prepare('INSERT INTO memos (title, content) VALUES (?, ?)').run(
-          path.basename(filePath),
-          content
-        );
+        const result = db.prepare('INSERT INTO memos (content) VALUES (?)').run(content);
       }
     }
   }

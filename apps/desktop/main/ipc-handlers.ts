@@ -5,8 +5,8 @@ import { WindowManager } from './window-manager';
 export function setupIpcHandlers(windowManager: WindowManager): void {
   ipcMain.handle('memo:create', async () => {
     const db = getDatabase();
-    const result = db.prepare('INSERT INTO memos (title, content) VALUES (?, ?)').run('', '');
-    return { id: result.lastInsertRowid, title: '', content: '', mode: 'text' };
+    const result = db.prepare('INSERT INTO memos (content) VALUES (?)').run('');
+    return { id: result.lastInsertRowid, content: '', mode: 'text' };
   });
   
   ipcMain.handle('memo:get', async (_, id: number) => {
@@ -59,7 +59,7 @@ export function setupIpcHandlers(windowManager: WindowManager): void {
   ipcMain.handle('memo:search', async (_, query: string) => {
     const db = getDatabase();
     const searchTerm = `%${query}%`;
-    const memos = db.prepare('SELECT * FROM memos WHERE title LIKE ? OR content LIKE ? ORDER BY updated_at DESC').all(searchTerm, searchTerm);
+    const memos = db.prepare('SELECT * FROM memos WHERE (title IS NOT NULL AND title LIKE ?) OR content LIKE ? ORDER BY updated_at DESC').all(searchTerm, searchTerm);
     return memos;
   });
   

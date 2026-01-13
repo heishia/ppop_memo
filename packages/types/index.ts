@@ -1,6 +1,6 @@
 export interface Memo {
   id: number;
-  title: string;
+  title?: string;
   content: string;
   canvas_data?: string;
   mode: 'text' | 'canvas';

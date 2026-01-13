@@ -6,8 +6,8 @@ const database_1 = require("./database");
 function setupIpcHandlers(windowManager) {
     electron_1.ipcMain.handle('memo:create', async () => {
         const db = (0, database_1.getDatabase)();
-        const result = db.prepare('INSERT INTO memos (title, content) VALUES (?, ?)').run('', '');
-        return { id: result.lastInsertRowid, title: '', content: '', mode: 'text' };
+        const result = db.prepare('INSERT INTO memos (content) VALUES (?)').run('');
+        return { id: result.lastInsertRowid, content: '', mode: 'text' };
     });
     electron_1.ipcMain.handle('memo:get', async (_, id) => {
         const db = (0, database_1.getDatabase)();
@@ -52,7 +52,7 @@ function setupIpcHandlers(windowManager) {
     electron_1.ipcMain.handle('memo:search', async (_, query) => {
         const db = (0, database_1.getDatabase)();
         const searchTerm = `%${query}%`;
-        const memos = db.prepare('SELECT * FROM memos WHERE title LIKE ? OR content LIKE ? ORDER BY updated_at DESC').all(searchTerm, searchTerm);
+        const memos = db.prepare('SELECT * FROM memos WHERE (title IS NOT NULL AND title LIKE ?) OR content LIKE ? ORDER BY updated_at DESC').all(searchTerm, searchTerm);
         return memos;
     });
     electron_1.ipcMain.handle('folder:create', async (_, name, parentId) => {
