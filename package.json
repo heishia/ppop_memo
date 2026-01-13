@@ -11,7 +11,7 @@
     "dev:start": "node scripts/dev-start.js",
     "build": "npm run build:renderer && npm run build:electron",
     "build:renderer": "vite build",
-    "build:electron": "tsc --project tsconfig.electron.json && node -e \"require('fs').writeFileSync('dist/package.json','{\\\"type\\\":\\\"commonjs\\\"}')\"",
+    "build:electron": "tsc --project tsconfig.electron.json && node --eval \"import('fs').then(f=>f.writeFileSync('dist/package.json','{\\\"type\\\":\\\"commonjs\\\"}'))\"",
     "start": "electron .",
     "dist": "npm run build && electron-builder",
     "lint": "eslint . --ext .ts,.tsx",
