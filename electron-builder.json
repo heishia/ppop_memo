@@ -54,11 +54,5 @@
         "path": "/Applications"
       }
     ]
-  },
-  "publish": {
-    "provider": "github",
-    "owner": "YOUR_GITHUB_USERNAME",
-    "repo": "ppop_memo",
-    "releaseType": "release"
   }
 }
