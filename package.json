@@ -20,7 +20,7 @@
     "clean": "rimraf dist release apps/desktop/renderer/dist",
     "lint": "eslint . --ext .ts,.tsx",
     "type-check": "tsc --noEmit",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "cross-env npm_config_build_from_source=false electron-builder install-app-deps"
   },
   "keywords": [
     "memo",

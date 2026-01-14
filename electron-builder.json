@@ -59,5 +59,6 @@
     "provider": "github",
     "owner": "heishia",
     "repo": "ppop_memo"
-  }
+  },
+  "buildDependenciesFromSource": false
 }
