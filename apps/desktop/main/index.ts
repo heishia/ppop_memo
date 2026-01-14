@@ -1,10 +1,10 @@
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
-import { initDatabase } from './database';
-import { setupIpcHandlers } from './ipc-handlers';
-import { WindowManager } from './window-manager';
-import { setupFileHandler } from './file-handler';
-import { setupAutoUpdater, checkForUpdates } from './updater';
+import { initDatabase } from './database.js';
+import { setupIpcHandlers } from './ipc-handlers.js';
+import { WindowManager } from './window-manager.js';
+import { setupFileHandler } from './file-handler.js';
+import { setupAutoUpdater, checkForUpdates } from './updater.js';
 
 let windowManager: WindowManager;
 

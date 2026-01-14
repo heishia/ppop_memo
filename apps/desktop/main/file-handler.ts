@@ -1,8 +1,8 @@
 import { app, dialog, BrowserWindow } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
-import { WindowManager } from './window-manager';
-import { getDatabase } from './database';
+import { WindowManager } from './window-manager.js';
+import { getDatabase } from './database.js';
 
 export function setupFileHandler(windowManager: WindowManager): void {
   if (process.platform === 'win32') {

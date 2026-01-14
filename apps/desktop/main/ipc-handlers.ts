@@ -1,7 +1,7 @@
 import { ipcMain, shell, app } from 'electron';
-import { getDatabase, getConfig, setConfig, getDatabasePath } from './database';
-import { WindowManager } from './window-manager';
-import { checkForUpdates } from './updater';
+import { getDatabase, getConfig, setConfig, getDatabasePath } from './database.js';
+import { WindowManager } from './window-manager.js';
+import { checkForUpdates } from './updater.js';
 import * as path from 'path';
 
 export function setupIpcHandlers(windowManager: WindowManager): void {
