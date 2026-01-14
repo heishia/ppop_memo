@@ -70,7 +70,6 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
   const [showSettings, setShowSettings] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const editorRef = useRef<{ saveNow: () => Promise<void> } | null>(null);
   const canvasClearRef = useRef<(() => void) | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -90,18 +89,6 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
     };
     loadMemo();
     
-    const loadTheme = async () => {
-      const darkMode = await window.electronAPI.settings.get('darkMode');
-      setIsDarkMode(darkMode !== 'false');
-    };
-    loadTheme();
-    
-    const handleThemeChange = (event: CustomEvent) => {
-      setIsDarkMode(event.detail.isDarkMode);
-    };
-    
-    window.addEventListener('themeChange', handleThemeChange as EventListener);
-    
     window.electronAPI.on('memo:load', async (id: number) => {
       const loadedMemo = await window.electronAPI.memo.get(id);
       setMemo(loadedMemo);
@@ -112,10 +99,6 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
       const windowId = window.electronAPI.window.getId();
       await window.electronAPI.window.saveState(windowId, state);
     });
-    
-    return () => {
-      window.removeEventListener('themeChange', handleThemeChange as EventListener);
-    };
   }, [memoId]);
 
   useEffect(() => {
