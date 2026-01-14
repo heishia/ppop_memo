@@ -19,7 +19,7 @@
         "arch": ["x64"]
       }
     ],
-    "icon": "asset/로고.ico",
+    "icon": "asset/favicon.ico",
     "publisherName": "PPOP"
   },
   "nsis": {
@@ -38,7 +38,8 @@
         "arch": ["x64", "arm64"]
       }
     ],
-    "category": "public.app-category.productivity"
+    "category": "public.app-category.productivity",
+    "icon": "asset/favicon.icns"
   },
   "dmg": {
     "contents": [
