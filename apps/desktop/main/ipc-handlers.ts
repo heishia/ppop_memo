@@ -1,6 +1,7 @@
-import { ipcMain, shell } from 'electron';
+import { ipcMain, shell, app } from 'electron';
 import { getDatabase } from './database';
 import { WindowManager } from './window-manager';
+import { checkForUpdates } from './updater';
 
 export function setupIpcHandlers(windowManager: WindowManager): void {
   ipcMain.handle('memo:create', async (_, data?: { title?: string; content?: string; canvas_data?: string | null; mode?: string; folder_id?: number | null }) => {
@@ -215,10 +216,22 @@ export function setupIpcHandlers(windowManager: WindowManager): void {
 
   ipcMain.handle('app:getPath', async (_, name: string) => {
     try {
-      const { app } = require('electron');
       return app.getPath(name as any);
     } catch (error) {
       return null;
+    }
+  });
+
+  ipcMain.handle('app:getVersion', async () => {
+    return app.getVersion();
+  });
+
+  ipcMain.handle('app:checkForUpdates', async () => {
+    try {
+      checkForUpdates();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: String(error) };
     }
   });
 }

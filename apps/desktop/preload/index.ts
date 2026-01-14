@@ -34,6 +34,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   app: {
     getPath: (name: string) => ipcRenderer.invoke('app:getPath', name),
+    getVersion: () => ipcRenderer.invoke('app:getVersion'),
+    checkForUpdates: () => ipcRenderer.invoke('app:checkForUpdates'),
   },
   on: (channel: string, callback: (...args: any[]) => void) => {
     ipcRenderer.on(channel, (_, ...args) => callback(...args));

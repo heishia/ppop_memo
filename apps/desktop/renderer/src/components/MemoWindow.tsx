@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import MemoEditor from './MemoEditor';
 import MemoManagement from './MemoManagement';
 import Settings from './Settings';
+import About from './About';
 import Toast from './Toast';
 
 interface MemoWindowProps {
@@ -66,6 +67,7 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showMemoManagement, setShowMemoManagement] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const editorRef = useRef<{ saveNow: () => Promise<void> } | null>(null);
   const canvasClearRef = useRef<(() => void) | null>(null);
@@ -250,6 +252,16 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
                 >
                   설정
                 </button>
+                <div className="border-t border-gray-200 my-1"></div>
+                <button
+                  onClick={() => {
+                    setShowAbout(true);
+                    setShowMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  정보
+                </button>
               </div>
             )}
           </div>
@@ -297,6 +309,9 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
       )}
       {showSettings && (
         <Settings onClose={() => setShowSettings(false)} />
+      )}
+      {showAbout && (
+        <About onClose={() => setShowAbout(false)} />
       )}
       {toast && (
         <Toast

@@ -30,6 +30,14 @@ declare global {
         set: (key: string, value: string) => Promise<any>;
         getAll: () => Promise<Record<string, string>>;
       };
+      shell: {
+        openPath: (path: string) => Promise<{ success: boolean; error?: string }>;
+      };
+      app: {
+        getPath: (name: string) => Promise<string | null>;
+        getVersion: () => Promise<string>;
+        checkForUpdates: () => Promise<{ success: boolean; error?: string }>;
+      };
       on: (channel: string, callback: (...args: any[]) => void) => void;
     };
   }
