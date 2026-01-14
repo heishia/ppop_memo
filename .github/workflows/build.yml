@@ -37,6 +37,10 @@ jobs:
         env:
           npm_config_build_from_source: false
       
+      - name: Install rollup native (mac)
+        if: matrix.os == 'macos-latest'
+        run: npm install @rollup/rollup-darwin-arm64@^4.20.0 --no-save
+
       - name: Build application
         run: npm run dist
         env:
