@@ -16,6 +16,6 @@
       "@packages/*": ["./packages/*"]
     }
   },
-  "include": ["apps/desktop/main/**/*", "apps/desktop/preload/**/*"],
+  "include": ["apps/desktop/main/**/*"],
   "exclude": ["node_modules", "dist"]
 }
