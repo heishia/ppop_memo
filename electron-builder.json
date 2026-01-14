@@ -15,7 +15,7 @@
         "arch": ["x64"]
       }
     ],
-    "icon": "build/icon.ico",
+    "icon": "asset/로고.ico",
     "publisherName": "PPOP"
   },
   "nsis": {
