@@ -1,6 +1,6 @@
 {
   "name": "ppop-memo",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "type": "module",
   "description": "Desktop memo application with sticky notes, file association, and handwriting recognition",
   "main": "dist/apps/desktop/main/index.js",
