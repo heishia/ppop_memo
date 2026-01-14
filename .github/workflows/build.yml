@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Install native dependencies
+        run: npm run postinstall
+      
       - name: Build application
         run: npm run dist
         env:
