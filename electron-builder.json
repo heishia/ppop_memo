@@ -60,5 +60,6 @@
     "owner": "heishia",
     "repo": "ppop_memo"
   },
-  "buildDependenciesFromSource": false
+  "buildDependenciesFromSource": false,
+  "npmRebuild": false
 }
