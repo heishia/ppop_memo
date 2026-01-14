@@ -212,4 +212,13 @@ export function setupIpcHandlers(windowManager: WindowManager): void {
       return { success: false, error: String(error) };
     }
   });
+
+  ipcMain.handle('app:getPath', async (_, name: string) => {
+    try {
+      const { app } = require('electron');
+      return app.getPath(name as any);
+    } catch (error) {
+      return null;
+    }
+  });
 }

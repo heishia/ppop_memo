@@ -14,6 +14,7 @@ function Settings({ onClose }: SettingsProps) {
   const [savePath, setSavePath] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [defaultPath, setDefaultPath] = useState('');
 
   useEffect(() => {
     loadSettings();
@@ -24,6 +25,11 @@ function Settings({ onClose }: SettingsProps) {
       const path = await window.electronAPI.settings.get('savePath');
       if (path) {
         setSavePath(path);
+      }
+      
+      const userData = await window.electronAPI.app.getPath('userData');
+      if (userData) {
+        setDefaultPath(userData);
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -50,18 +56,28 @@ function Settings({ onClose }: SettingsProps) {
   };
 
   const handleOpenFolder = async () => {
-    if (savePath && savePath.trim()) {
-      try {
-        const result = await window.electronAPI.shell.openPath(savePath);
-        if (!result.success && result.error) {
-          alert('폴더를 열 수 없습니다: ' + result.error);
+    const pathToOpen = savePath && savePath.trim() ? savePath.trim() : defaultPath;
+    
+    if (!pathToOpen) {
+      alert('저장 경로를 먼저 입력해주세요.\n\n예: C:\\Users\\Documents\\Memos');
+      return;
+    }
+
+    try {
+      console.log('Attempting to open path:', pathToOpen);
+      const result = await window.electronAPI.shell.openPath(pathToOpen);
+      console.log('Open folder result:', result);
+      
+      if (!result.success) {
+        if (result.error) {
+          alert('폴더를 열 수 없습니다.\n\n경로: ' + pathToOpen + '\n오류: ' + result.error + '\n\n경로가 존재하는지 확인해주세요.');
+        } else {
+          alert('폴더를 열 수 없습니다. 경로를 확인해주세요.');
         }
-      } catch (error) {
-        console.error('Failed to open folder:', error);
-        alert('폴더를 열 수 없습니다.');
       }
-    } else {
-      alert('저장 경로를 먼저 입력해주세요.');
+    } catch (error) {
+      console.error('Failed to open folder:', error);
+      alert('폴더를 열 수 없습니다: ' + error);
     }
   };
 
@@ -93,7 +109,7 @@ function Settings({ onClose }: SettingsProps) {
                   type="text"
                   value={savePath}
                   onChange={handleSavePathChange}
-                  placeholder="예: C:\Users\Documents\Memos"
+                  placeholder="비워두면 기본 경로 사용"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -108,6 +124,23 @@ function Settings({ onClose }: SettingsProps) {
             <p className="mt-2 text-xs text-gray-500">
               메모가 저장될 기본 경로를 설정합니다. 비워두면 기본 경로를 사용합니다.
             </p>
+            {defaultPath && (
+              <div className="mt-3 p-3 bg-gray-50 rounded-md">
+                <p className="text-xs font-medium text-gray-700 mb-1">현재 데이터베이스 위치:</p>
+                <p className="text-xs text-gray-600 break-all">{defaultPath}</p>
+                <button
+                  onClick={async () => {
+                    const result = await window.electronAPI.shell.openPath(defaultPath);
+                    if (!result.success && result.error) {
+                      alert('폴더를 열 수 없습니다: ' + result.error);
+                    }
+                  }}
+                  className="mt-2 text-xs text-blue-600 hover:text-blue-700 underline"
+                >
+                  데이터베이스 폴더 열기
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

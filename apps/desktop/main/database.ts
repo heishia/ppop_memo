@@ -3,11 +3,18 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { app } from 'electron';
 
-const dbPath = path.join(app.getPath('userData'), 'memos.db');
+const userDataPath = app.getPath('userData');
+const dbPath = path.join(userDataPath, 'memos.db');
 let db: Database.Database;
 
 export function initDatabase(): void {
+  if (!fs.existsSync(userDataPath)) {
+    fs.mkdirSync(userDataPath, { recursive: true });
+    console.log('Created userData directory:', userDataPath);
+  }
+  
   db = new Database(dbPath);
+  console.log('Database initialized at:', dbPath);
   
   db.exec(`
     CREATE TABLE IF NOT EXISTS memos (
