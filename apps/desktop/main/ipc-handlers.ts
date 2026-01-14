@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { ipcMain, shell } from 'electron';
 import { getDatabase } from './database';
 import { WindowManager } from './window-manager';
 
@@ -202,5 +202,14 @@ export function setupIpcHandlers(windowManager: WindowManager): void {
       result[setting.key] = setting.value;
     });
     return result;
+  });
+
+  ipcMain.handle('shell:openPath', async (_, path: string) => {
+    try {
+      const result = await shell.openPath(path);
+      return { success: result === '', error: result };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
   });
 }

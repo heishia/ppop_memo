@@ -29,6 +29,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     set: (key: string, value: string) => ipcRenderer.invoke('settings:set', key, value),
     getAll: () => ipcRenderer.invoke('settings:getAll'),
   },
+  shell: {
+    openPath: (path: string) => ipcRenderer.invoke('shell:openPath', path),
+  },
   on: (channel: string, callback: (...args: any[]) => void) => {
     ipcRenderer.on(channel, (_, ...args) => callback(...args));
   },

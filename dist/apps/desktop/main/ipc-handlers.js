@@ -177,4 +177,13 @@ function setupIpcHandlers(windowManager) {
         });
         return result;
     });
+    electron_1.ipcMain.handle('shell:openPath', async (_, path) => {
+        try {
+            const result = await electron_1.shell.openPath(path);
+            return { success: result === '', error: result };
+        }
+        catch (error) {
+            return { success: false, error: String(error) };
+        }
+    });
 }

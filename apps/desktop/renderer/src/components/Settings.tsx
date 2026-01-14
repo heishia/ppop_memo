@@ -49,6 +49,22 @@ function Settings({ onClose }: SettingsProps) {
     }
   };
 
+  const handleOpenFolder = async () => {
+    if (savePath && savePath.trim()) {
+      try {
+        const result = await window.electronAPI.shell.openPath(savePath);
+        if (!result.success && result.error) {
+          alert('폴더를 열 수 없습니다: ' + result.error);
+        }
+      } catch (error) {
+        console.error('Failed to open folder:', error);
+        alert('폴더를 열 수 없습니다.');
+      }
+    } else {
+      alert('저장 경로를 먼저 입력해주세요.');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -82,8 +98,9 @@ function Settings({ onClose }: SettingsProps) {
                 />
               </div>
               <button
+                onClick={handleOpenFolder}
                 className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors flex items-center gap-1"
-                title="폴더 선택"
+                title="폴더 열기"
               >
                 <FolderIcon />
               </button>

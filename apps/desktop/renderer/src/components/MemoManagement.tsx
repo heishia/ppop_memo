@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ConfirmDialog from './ConfirmDialog';
 
 interface Memo {
   id: number;
@@ -55,6 +56,12 @@ const CloseIcon = () => (
   </svg>
 );
 
+const BackIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="15 18 9 12 15 6"/>
+  </svg>
+);
+
 function MemoManagement({ onClose, onLoadMemo }: MemoManagementProps) {
   const [memos, setMemos] = useState<Memo[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -62,6 +69,18 @@ function MemoManagement({ onClose, onLoadMemo }: MemoManagementProps) {
   const [selectedFolder, setSelectedFolder] = useState<number | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolderInput, setShowNewFolderInput] = useState(false);
+  const [mobileView, setMobileView] = useState<'folders' | 'memos'>('folders');
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
 
   useEffect(() => {
     loadMemos();
@@ -89,10 +108,16 @@ function MemoManagement({ onClose, onLoadMemo }: MemoManagementProps) {
 
   const handleDeleteMemo = async (memoId: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('이 메모를 삭제하시겠습니까?')) {
-      await window.electronAPI.memo.delete(memoId);
-      loadMemos();
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: '메모 삭제',
+      message: '이 메모를 삭제하시겠습니까?',
+      onConfirm: async () => {
+        await window.electronAPI.memo.delete(memoId);
+        loadMemos();
+        setConfirmDialog({ ...confirmDialog, isOpen: false });
+      }
+    });
   };
 
   const handleCreateFolder = async () => {
@@ -106,14 +131,20 @@ function MemoManagement({ onClose, onLoadMemo }: MemoManagementProps) {
 
   const handleDeleteFolder = async (folderId: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('이 폴더를 삭제하시겠습니까? (폴더 내 메모는 유지됩니다)')) {
-      await window.electronAPI.folder.delete(folderId);
-      if (selectedFolder === folderId) {
-        setSelectedFolder(null);
+    setConfirmDialog({
+      isOpen: true,
+      title: '폴더 삭제',
+      message: '이 폴더를 삭제하시겠습니까? (폴더 내 메모는 유지됩니다)',
+      onConfirm: async () => {
+        await window.electronAPI.folder.delete(folderId);
+        if (selectedFolder === folderId) {
+          setSelectedFolder(null);
+        }
+        loadFolders();
+        loadMemos();
+        setConfirmDialog({ ...confirmDialog, isOpen: false });
       }
-      loadFolders();
-      loadMemos();
-    }
+    });
   };
 
   const handleMemoClick = (memoId: number) => {
@@ -144,11 +175,38 @@ function MemoManagement({ onClose, onLoadMemo }: MemoManagementProps) {
     return '빈 메모';
   };
 
+  const handleFolderClick = (folderId: number | null) => {
+    setSelectedFolder(folderId);
+    setMobileView('memos');
+  };
+
+  const handleBackToFolders = () => {
+    setMobileView('folders');
+  };
+
+  const getSelectedFolderName = () => {
+    if (selectedFolder === null) return '모든 메모';
+    const folder = folders.find(f => f.id === selectedFolder);
+    return folder ? folder.name : '모든 메모';
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl h-full max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0">
-          <h2 className="text-lg font-semibold text-gray-800">메모 관리</h2>
+          <div className="flex items-center gap-2">
+            {mobileView === 'memos' && (
+              <button
+                onClick={handleBackToFolders}
+                className="p-1 rounded hover:bg-gray-100 text-gray-600 transition-colors lg:hidden"
+              >
+                <BackIcon />
+              </button>
+            )}
+            <h2 className="text-lg font-semibold text-gray-800">
+              {mobileView === 'memos' ? getSelectedFolderName() : '메모 관리'}
+            </h2>
+          </div>
           <button
             onClick={onClose}
             className="p-1 rounded hover:bg-gray-100 text-gray-600 transition-colors"
@@ -158,10 +216,10 @@ function MemoManagement({ onClose, onLoadMemo }: MemoManagementProps) {
         </div>
 
         <div className="flex-1 flex overflow-hidden min-h-0">
-          <div className="w-48 md:w-56 lg:w-64 border-r border-gray-200 flex flex-col flex-shrink-0">
+          <div className={`w-full lg:w-48 lg:border-r border-gray-200 flex flex-col flex-shrink-0 ${mobileView === 'memos' ? 'hidden lg:flex lg:w-56 xl:w-64' : 'flex'}`}>
             <div className="p-2 md:p-3 border-b border-gray-200 flex-shrink-0">
               <button
-                onClick={() => setSelectedFolder(null)}
+                onClick={() => handleFolderClick(null)}
                 className={`w-full px-2 md:px-3 py-2 rounded text-xs md:text-sm text-left transition-colors ${
                   selectedFolder === null ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-700'
                 }`}
@@ -202,7 +260,7 @@ function MemoManagement({ onClose, onLoadMemo }: MemoManagementProps) {
                   className={`flex items-center justify-between px-2 md:px-3 py-2 rounded mb-1 cursor-pointer transition-colors ${
                     selectedFolder === folder.id ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-700'
                   }`}
-                  onClick={() => setSelectedFolder(folder.id)}
+                  onClick={() => handleFolderClick(folder.id)}
                 >
                   <div className="flex items-center gap-1 md:gap-2 flex-1 min-w-0">
                     <FolderIcon />
@@ -219,7 +277,7 @@ function MemoManagement({ onClose, onLoadMemo }: MemoManagementProps) {
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col min-w-0">
+          <div className={`flex-1 flex flex-col min-w-0 ${mobileView === 'folders' ? 'hidden lg:flex' : 'flex'}`}>
             <div className="p-2 md:p-3 border-b border-gray-200 flex-shrink-0">
               <div className="flex gap-2">
                 <div className="flex-1 relative min-w-0">
@@ -292,6 +350,14 @@ function MemoManagement({ onClose, onLoadMemo }: MemoManagementProps) {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+      />
     </div>
   );
 }
