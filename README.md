@@ -79,6 +79,8 @@ export const HANDWRITING_CONFIG = {
 
 ### 새 버전 릴리즈 방법
 
+#### 방법 1: GitHub Actions 자동 빌드 (권장)
+
 1. **버전 업데이트**
    ```bash
    npm version patch  # 1.0.0 → 1.0.1
@@ -92,20 +94,34 @@ export const HANDWRITING_CONFIG = {
    git push --tags
    ```
 
-3. **빌드 및 릴리즈**
+3. **자동 빌드 및 릴리즈**
+   - GitHub Actions가 자동으로 Windows와 macOS 빌드를 생성
+   - 태그를 푸시하면 자동으로 GitHub Release 생성
+   - Windows (.exe), macOS (.dmg, .zip) 파일이 자동으로 업로드됨
+
+#### 방법 2: 수동 빌드
+
+1. **로컬에서 빌드**
    ```bash
    npm run dist
    ```
 
-4. **GitHub Release 생성**
+2. **GitHub Release 생성**
    - GitHub에서 새 Release 생성
    - 태그 선택 (예: v1.0.1)
    - `release/` 폴더의 설치 파일 업로드
    - Release 게시
 
-5. **자동 업데이트 설정**
-   - `electron-builder.json`의 `publish` 섹션에서 GitHub 정보 설정
-   - GitHub Personal Access Token 필요 (repo 권한)
+#### 수동으로 GitHub Actions 실행
+
+태그 없이 빌드만 테스트하려면:
+1. GitHub 저장소의 Actions 탭으로 이동
+2. "Build and Release" 워크플로우 선택
+3. "Run workflow" 버튼 클릭
+
+#### 자동 업데이트 설정
+- `electron-builder.json`의 `publish` 섹션에서 GitHub 정보 설정
+- GitHub Personal Access Token 필요 (repo 권한)
 
 ## 문서
 
