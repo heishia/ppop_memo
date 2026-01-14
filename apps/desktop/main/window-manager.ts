@@ -15,6 +15,7 @@ export class WindowManager {
       x: Math.floor((width - 400) / 2),
       y: Math.floor((height - 500) / 2),
       webPreferences: {
+        spellcheck: false,
         preload: path.join(__dirname, '../preload/index.js'),
         nodeIntegration: false,
         contextIsolation: true,
