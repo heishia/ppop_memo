@@ -97,8 +97,8 @@ function Settings({ onClose }: SettingsProps) {
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4 py-6 sm:p-6">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-lg sm:min-w-[420px] p-6 max-h-[80vh] overflow-y-auto">
           <div className="text-center">로딩 중...</div>
         </div>
       </div>
@@ -106,8 +106,8 @@ function Settings({ onClose }: SettingsProps) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4 py-6 sm:p-6">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg sm:min-w-[420px] max-h-[85vh] overflow-y-auto">
         <div className="border-b border-gray-200 px-6 py-4">
           <h2 className="text-xl font-bold text-gray-800">설정</h2>
         </div>

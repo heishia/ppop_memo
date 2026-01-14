@@ -91,6 +91,7 @@ function DrawingCanvas({ canvasData, onCanvasChange, clearRef }: DrawingCanvasPr
       height: height,
       isDrawingMode: true,
     });
+    canvas.freeDrawingBrush.color = '#ffffff';
     
     fabricCanvasRef.current = canvas;
     
