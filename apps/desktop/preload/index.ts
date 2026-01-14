@@ -28,6 +28,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     get: (key: string) => ipcRenderer.invoke('settings:get', key),
     set: (key: string, value: string) => ipcRenderer.invoke('settings:set', key, value),
     getAll: () => ipcRenderer.invoke('settings:getAll'),
+    getDatabasePath: () => ipcRenderer.invoke('settings:getDatabasePath'),
+    getConfig: () => ipcRenderer.invoke('settings:getConfig'),
   },
   shell: {
     openPath: (path: string) => ipcRenderer.invoke('shell:openPath', path),

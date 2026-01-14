@@ -20,7 +20,7 @@
     "clean": "rimraf dist release apps/desktop/renderer/dist",
     "lint": "eslint . --ext .ts,.tsx",
     "type-check": "tsc --noEmit",
-    "postinstall": "cross-env npm_config_build_from_source=false electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps"
   },
   "keywords": [
     "memo",
@@ -31,7 +31,6 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@electron/rebuild": "^4.0.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.43",

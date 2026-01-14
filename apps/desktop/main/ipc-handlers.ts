@@ -1,7 +1,8 @@
 import { ipcMain, shell, app } from 'electron';
-import { getDatabase } from './database';
+import { getDatabase, getConfig, setConfig, getDatabasePath } from './database';
 import { WindowManager } from './window-manager';
 import { checkForUpdates } from './updater';
+import * as path from 'path';
 
 export function setupIpcHandlers(windowManager: WindowManager): void {
   ipcMain.handle('memo:create', async (_, data?: { title?: string; content?: string; canvas_data?: string | null; mode?: string; folder_id?: number | null }) => {
@@ -192,7 +193,22 @@ export function setupIpcHandlers(windowManager: WindowManager): void {
   ipcMain.handle('settings:set', async (_, key: string, value: string) => {
     const db = getDatabase();
     db.prepare('INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)').run(key, value);
+    
+    if (key === 'savePath') {
+      const config = getConfig();
+      config.savePath = value;
+      setConfig(config);
+    }
+    
     return { success: true };
+  });
+
+  ipcMain.handle('settings:getDatabasePath', async () => {
+    return getDatabasePath();
+  });
+
+  ipcMain.handle('settings:getConfig', async () => {
+    return getConfig();
   });
 
   ipcMain.handle('settings:getAll', async () => {

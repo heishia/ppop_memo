@@ -29,6 +29,8 @@ declare global {
         get: (key: string) => Promise<string | null>;
         set: (key: string, value: string) => Promise<any>;
         getAll: () => Promise<Record<string, string>>;
+        getDatabasePath: () => Promise<string>;
+        getConfig: () => Promise<{ savePath?: string }>;
       };
       shell: {
         openPath: (path: string) => Promise<{ success: boolean; error?: string }>;
