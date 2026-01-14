@@ -77,17 +77,27 @@ function About({ onClose }: AboutProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-        <div className="border-b border-gray-200 px-6 py-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between sticky top-0 bg-white z-10">
           <div className="flex items-center gap-3">
             <div className="text-blue-600">
               <InfoIcon />
             </div>
-            <h2 className="text-xl font-bold text-gray-800">정보</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800">정보</h2>
           </div>
+          <button
+            onClick={onClose}
+            className="p-1 rounded hover:bg-gray-100 text-gray-600 transition-colors"
+            title="닫기"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
         </div>
         
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           <div className="text-center">
             <h3 className="text-3xl font-bold text-blue-600 mb-2">
               {PPOP_INFO.brandName}
@@ -151,7 +161,7 @@ function About({ onClose }: AboutProps) {
           </div>
         </div>
 
-        <div className="border-t border-gray-200 px-6 py-4 flex justify-end">
+        <div className="border-t border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex justify-end sticky bottom-0 bg-white">
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"

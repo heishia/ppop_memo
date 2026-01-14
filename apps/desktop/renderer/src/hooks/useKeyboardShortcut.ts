@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-export function useKeyboardShortcut(key: string, callback: () => void): void {
+export function useKeyboardShortcut(key: string, callback: (e: KeyboardEvent) => void): void {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const keyParts = key.toLowerCase().split('+');
@@ -20,7 +20,7 @@ export function useKeyboardShortcut(key: string, callback: () => void): void {
         e.key.toLowerCase() === mainKey
       ) {
         e.preventDefault();
-        callback();
+        callback(e);
       }
     };
 

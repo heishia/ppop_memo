@@ -10,6 +10,8 @@ export class WindowManager {
     const win = new BrowserWindow({
       width: 400,
       height: 500,
+      minWidth: 300,
+      minHeight: 350,
       x: Math.floor((width - 400) / 2),
       y: Math.floor((height - 500) / 2),
       webPreferences: {

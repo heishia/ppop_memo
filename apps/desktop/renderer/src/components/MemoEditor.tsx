@@ -3,6 +3,18 @@ import DrawingCanvas from './DrawingCanvas';
 import { useUndoRedo } from '../hooks/useUndoRedo';
 import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut';
 
+const FolderIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+  </svg>
+);
+
+interface Folder {
+  id: number;
+  name: string;
+  parent_id: number | null;
+}
+
 interface MemoEditorProps {
   memoId: number;
   memo: any;
@@ -19,6 +31,9 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
   const [showTitle, setShowTitle] = useState(!!memo?.title);
   const [showTitleModal, setShowTitleModal] = useState(false);
   const [tempTitle, setTempTitle] = useState('');
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [selectedFolderId, setSelectedFolderId] = useState<number | null>(memo?.folder_id || null);
+  const [showFolderModal, setShowFolderModal] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const titleRef = useRef(title);
   const contentRef = useRef(memo?.content || '');
@@ -45,7 +60,17 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
     setContent(newContent);
     contentHistory.reset(newContent);
     setShowTitle(!!memo?.title);
+    setSelectedFolderId(memo?.folder_id || null);
   }, [memo]);
+
+  useEffect(() => {
+    loadFolders();
+  }, []);
+
+  const loadFolders = async () => {
+    const allFolders = await window.electronAPI.folder.list();
+    setFolders(allFolders);
+  };
 
   useKeyboardShortcut('ctrl+z', () => {
     if (mode === 'text' && contentHistory.canUndo) {
@@ -122,13 +147,25 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
     saveMemo();
   };
 
+  const handleFolderSelect = async (folderId: number | null) => {
+    setSelectedFolderId(folderId);
+    await window.electronAPI.memo.moveToFolder(memoId, folderId);
+    setShowFolderModal(false);
+  };
+
+  const getSelectedFolderName = () => {
+    if (selectedFolderId === null) return '폴더 없음';
+    const folder = folders.find(f => f.id === selectedFolderId);
+    return folder ? folder.name : '폴더 없음';
+  };
+
 
   if (mode === 'canvas') {
     return (
       <>
         <div className="h-full flex flex-col">
           {showTitle && (
-            <div className="shrink-0 px-3 py-2 font-medium text-gray-700 cursor-pointer hover:bg-yellow-100" onClick={handleAddTitle}>
+            <div className="shrink-0 px-3 py-2 font-medium cursor-pointer transition-colors text-gray-200 hover:bg-gray-800" onClick={handleAddTitle}>
               {title || '제목'}
             </div>
           )}
@@ -141,16 +178,22 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
               clearRef={canvasClearRef}
             />
           </div>
-          {!showTitle && (
-            <div className="absolute bottom-4 left-3">
+          <div className="absolute bottom-4 left-3 flex gap-4">
+            {!showTitle && (
               <span
                 onClick={handleAddTitle}
-                className="text-sm text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
+                className="text-sm cursor-pointer transition-colors text-gray-500 hover:text-gray-300"
               >
                 + 제목 추가
               </span>
-            </div>
-          )}
+            )}
+            <span
+              onClick={() => setShowFolderModal(true)}
+              className="text-sm cursor-pointer transition-colors text-gray-500 hover:text-gray-300 flex items-center gap-1"
+            >
+              <FolderIcon /> 폴더 지정
+            </span>
+          </div>
         </div>
         {showTitleModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handleCancelTitle}>
@@ -185,6 +228,42 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
             </div>
           </div>
         )}
+        {showFolderModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowFolderModal(false)}>
+            <div className="bg-white rounded-lg shadow-xl p-6 w-96 max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+              <h2 className="text-lg font-bold mb-4">폴더 지정</h2>
+              <div className="flex-1 overflow-y-auto mb-4">
+                <div
+                  onClick={() => handleFolderSelect(null)}
+                  className={`px-4 py-3 rounded cursor-pointer transition-colors mb-2 ${
+                    selectedFolderId === null ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'
+                  }`}
+                >
+                  폴더 없음
+                </div>
+                {folders.map(folder => (
+                  <div
+                    key={folder.id}
+                    onClick={() => handleFolderSelect(folder.id)}
+                    className={`px-4 py-3 rounded cursor-pointer transition-colors mb-2 ${
+                      selectedFolderId === folder.id ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'
+                    }`}
+                  >
+                    📁 {folder.name}
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowFolderModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </>
     );
   }
@@ -193,7 +272,7 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
     <>
       <div className="h-full flex flex-col relative">
         {showTitle && (
-          <div className="shrink-0 px-3 py-2 font-medium text-gray-700 cursor-pointer hover:bg-yellow-100" onClick={handleAddTitle}>
+          <div className="shrink-0 px-3 py-2 font-medium cursor-pointer transition-colors text-gray-200 hover:bg-gray-800" onClick={handleAddTitle}>
             {title || '제목'}
           </div>
         )}
@@ -201,18 +280,24 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
           value={content}
           onChange={handleContentChange}
           placeholder="메모를 입력하세요..."
-          className="flex-1 w-full px-3 py-2 border-0 resize-none focus:outline-none bg-transparent placeholder-gray-400 overflow-auto pb-12"
+          className="flex-1 w-full px-3 py-2 border-0 resize-none focus:outline-none bg-transparent overflow-auto pb-12 text-gray-200 placeholder-gray-600"
         />
-        {!showTitle && (
-          <div className="absolute bottom-4 left-3">
+        <div className="absolute bottom-4 left-3 flex gap-4">
+          {!showTitle && (
             <span
               onClick={handleAddTitle}
-              className="text-sm text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
+              className="text-sm cursor-pointer transition-colors text-gray-500 hover:text-gray-300"
             >
               + 제목 추가
             </span>
-          </div>
-        )}
+          )}
+          <span
+            onClick={() => setShowFolderModal(true)}
+            className="text-sm cursor-pointer transition-colors text-gray-500 hover:text-gray-300 flex items-center gap-1"
+          >
+            <FolderIcon /> 폴더 지정
+          </span>
+        </div>
       </div>
       {showTitleModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handleCancelTitle}>
@@ -242,6 +327,42 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
                 className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
               >
                 저장
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showFolderModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowFolderModal(false)}>
+          <div className="bg-white rounded-lg shadow-xl p-6 w-96 max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-bold mb-4">폴더 지정</h2>
+            <div className="flex-1 overflow-y-auto mb-4">
+              <div
+                onClick={() => handleFolderSelect(null)}
+                className={`px-4 py-3 rounded cursor-pointer transition-colors mb-2 ${
+                  selectedFolderId === null ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'
+                }`}
+              >
+                폴더 없음
+              </div>
+              {folders.map(folder => (
+                <div
+                  key={folder.id}
+                  onClick={() => handleFolderSelect(folder.id)}
+                  className={`px-4 py-3 rounded cursor-pointer transition-colors mb-2 ${
+                    selectedFolderId === folder.id ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'
+                  }`}
+                >
+                  📁 {folder.name}
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowFolderModal(false)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+              >
+                닫기
               </button>
             </div>
           </div>

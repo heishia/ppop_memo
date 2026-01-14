@@ -317,11 +317,13 @@ function MemoManagement({ onClose, onLoadMemo }: MemoManagementProps) {
                   {filteredMemos.map(memo => (
                     <div
                       key={memo.id}
-                      onClick={() => handleMemoClick(memo.id)}
-                      className="p-2 md:p-3 border border-gray-200 rounded-lg hover:border-blue-500 hover:shadow-md cursor-pointer transition-all"
+                      className="p-2 md:p-3 border border-gray-200 rounded-lg hover:border-blue-500 hover:shadow-md transition-all"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
+                        <div 
+                          className="flex-1 min-w-0 cursor-pointer"
+                          onClick={() => handleMemoClick(memo.id)}
+                        >
                           <div className="flex items-center gap-1 md:gap-2 mb-1">
                             <MemoIcon />
                             <span className="text-xs text-gray-500">

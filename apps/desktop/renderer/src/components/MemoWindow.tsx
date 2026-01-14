@@ -4,6 +4,7 @@ import MemoManagement from './MemoManagement';
 import Settings from './Settings';
 import About from './About';
 import Toast from './Toast';
+import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut';
 
 interface MemoWindowProps {
   memoId: number;
@@ -69,6 +70,7 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
   const [showSettings, setShowSettings] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const editorRef = useRef<{ saveNow: () => Promise<void> } | null>(null);
   const canvasClearRef = useRef<(() => void) | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -88,6 +90,18 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
     };
     loadMemo();
     
+    const loadTheme = async () => {
+      const darkMode = await window.electronAPI.settings.get('darkMode');
+      setIsDarkMode(darkMode !== 'false');
+    };
+    loadTheme();
+    
+    const handleThemeChange = (event: CustomEvent) => {
+      setIsDarkMode(event.detail.isDarkMode);
+    };
+    
+    window.addEventListener('themeChange', handleThemeChange as EventListener);
+    
     window.electronAPI.on('memo:load', async (id: number) => {
       const loadedMemo = await window.electronAPI.memo.get(id);
       setMemo(loadedMemo);
@@ -98,6 +112,10 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
       const windowId = window.electronAPI.window.getId();
       await window.electronAPI.window.saveState(windowId, state);
     });
+    
+    return () => {
+      window.removeEventListener('themeChange', handleThemeChange as EventListener);
+    };
   }, [memoId]);
 
   useEffect(() => {
@@ -115,6 +133,16 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showMenu]);
+
+  useKeyboardShortcut('ctrl+s', async (e) => {
+    e.preventDefault();
+    if (editorRef.current) {
+      setIsSaving(true);
+      await editorRef.current.saveNow();
+      setToast({ message: '저장되었습니다', type: 'success' });
+      setTimeout(() => setIsSaving(false), 500);
+    }
+  });
 
   const handleModeToggle = async (newMode: 'text' | 'canvas') => {
     if (editorRef.current) {
@@ -203,29 +231,29 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-yellow-50">
-      <div className="bg-yellow-50 border-b border-yellow-200 flex items-center justify-between" style={{ WebkitAppRegion: 'drag' } as any}>
-        <div className="flex-1 px-3 py-1.5 text-xs font-medium text-gray-600">
+    <div className="h-screen flex flex-col bg-black">
+      <div className="border-b flex items-center justify-between bg-black border-gray-800" style={{ WebkitAppRegion: 'drag' } as any}>
+        <div className="flex-1 px-3 py-1.5 text-xs font-medium text-gray-400">
           PPOP Memo
         </div>
         <div className="flex items-center gap-0.5 pr-1" style={{ WebkitAppRegion: 'no-drag' } as any}>
           <button
             onClick={handleCreateNewMemo}
-            className="p-1 rounded hover:bg-yellow-200 text-gray-600 transition-colors"
+            className="p-1 rounded transition-colors hover:bg-gray-800 text-white"
             title="새 메모"
           >
             <PlusIcon />
           </button>
           <button
             onClick={handleManualSave}
-            className={`p-1 rounded transition-colors ${isSaving ? 'bg-green-500 text-white' : 'hover:bg-yellow-200 text-gray-600'}`}
+            className={`p-1 rounded transition-colors ${isSaving ? 'bg-green-500 text-white' : 'hover:bg-gray-800 text-white'}`}
             title="저장"
           >
             <SaveIcon />
           </button>
           <button
             onClick={handleAlwaysOnTopToggle}
-            className={`p-1 rounded transition-colors ${alwaysOnTop ? 'bg-blue-500 text-white' : 'hover:bg-yellow-200 text-gray-600'}`}
+            className={`p-1 rounded transition-colors ${alwaysOnTop ? 'bg-blue-500 text-white' : 'hover:bg-gray-800 text-white'}`}
             title={alwaysOnTop ? '고정 해제' : '항상 위에 고정'}
           >
             <PinIcon filled={alwaysOnTop} />
@@ -233,32 +261,32 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="p-1 rounded hover:bg-yellow-200 text-gray-600 transition-colors"
+              className="p-1 rounded transition-colors hover:bg-gray-800 text-white"
               title="메뉴"
             >
               <MoreIcon />
             </button>
             {showMenu && (
-              <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50">
+              <div className="absolute right-0 mt-1 w-48 rounded-md shadow-lg border py-1 z-50 bg-gray-900 border-gray-700">
                 <button
                   onClick={handleMemoManagement}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="w-full px-4 py-2 text-left text-sm transition-colors text-gray-300 hover:bg-gray-800"
                 >
                   메모 관리
                 </button>
                 <button
                   onClick={handleSettings}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="w-full px-4 py-2 text-left text-sm transition-colors text-gray-300 hover:bg-gray-800"
                 >
                   설정
                 </button>
-                <div className="border-t border-gray-200 my-1"></div>
+                <div className="border-t my-1 border-gray-700"></div>
                 <button
                   onClick={() => {
                     setShowAbout(true);
                     setShowMenu(false);
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="w-full px-4 py-2 text-left text-sm transition-colors text-gray-300 hover:bg-gray-800"
                 >
                   정보
                 </button>
@@ -267,27 +295,27 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
           </div>
           <button
             onClick={handleMinimize}
-            className="p-1 rounded hover:bg-yellow-200 text-gray-600 transition-colors"
+            className="p-1 rounded transition-colors hover:bg-gray-800 text-white"
             title="최소화"
           >
             <MinimizeIcon />
           </button>
           <button
             onClick={handleClose}
-            className="p-1 rounded hover:bg-red-500 hover:text-white text-gray-600 transition-colors"
+            className="p-1 rounded transition-colors hover:bg-red-600 text-white"
             title="닫기"
           >
             <CloseIcon />
           </button>
         </div>
       </div>
-      <div className="flex-1 relative bg-yellow-50">
+      <div className="flex-1 relative bg-gray-900">
         <MemoEditor ref={editorRef} memoId={memoId} memo={memo} mode={mode} canvasClearRef={canvasClearRef} />
         <div className="absolute bottom-3 right-3 flex gap-2">
           {mode === 'canvas' && (
             <button
               onClick={handleCanvasClear}
-              className="px-3 py-1.5 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded shadow transition-colors flex items-center gap-1"
+              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded shadow transition-colors flex items-center gap-1"
               title="캔버스 초기화"
             >
               <RefreshIcon />
@@ -295,7 +323,7 @@ function MemoWindow({ memoId, initialMemo }: MemoWindowProps) {
           )}
           <button
             onClick={() => handleModeToggle(mode === 'text' ? 'canvas' : 'text')}
-            className="px-3 py-1.5 bg-blue-500 text-white text-sm rounded shadow hover:bg-blue-600 transition-colors"
+            className="px-3 py-1.5 bg-white hover:bg-gray-100 text-black text-sm rounded shadow transition-colors font-medium"
           >
             {mode === 'text' ? 'Canvas 모드' : 'Text 모드'}
           </button>

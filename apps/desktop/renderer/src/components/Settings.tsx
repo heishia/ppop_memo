@@ -15,6 +15,7 @@ function Settings({ onClose }: SettingsProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [defaultPath, setDefaultPath] = useState('');
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -26,6 +27,9 @@ function Settings({ onClose }: SettingsProps) {
       if (path) {
         setSavePath(path);
       }
+      
+      const darkMode = await window.electronAPI.settings.get('darkMode');
+      setIsDarkMode(darkMode !== 'false');
       
       const userData = await window.electronAPI.app.getPath('userData');
       if (userData) {
@@ -46,6 +50,8 @@ function Settings({ onClose }: SettingsProps) {
     setIsSaving(true);
     try {
       await window.electronAPI.settings.set('savePath', savePath);
+      await window.electronAPI.settings.set('darkMode', isDarkMode.toString());
+      window.dispatchEvent(new CustomEvent('themeChange', { detail: { isDarkMode } }));
       setTimeout(() => {
         setIsSaving(false);
       }, 500);
@@ -53,6 +59,10 @@ function Settings({ onClose }: SettingsProps) {
       console.error('Failed to save settings:', error);
       setIsSaving(false);
     }
+  };
+
+  const handleDarkModeToggle = () => {
+    setIsDarkMode(!isDarkMode);
   };
 
   const handleOpenFolder = async () => {
@@ -99,6 +109,30 @@ function Settings({ onClose }: SettingsProps) {
         </div>
         
         <div className="p-6 space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              테마 설정
+            </label>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+              <span className="text-sm text-gray-700">다크 모드</span>
+              <button
+                onClick={handleDarkModeToggle}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  isDarkMode ? 'bg-blue-600' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    isDarkMode ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              다크 모드를 활성화하면 검은색 배경에 밝은 텍스트가 표시됩니다.
+            </p>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               저장 경로
