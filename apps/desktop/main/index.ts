@@ -6,6 +6,8 @@ import { WindowManager } from './window-manager.js';
 import { setupFileHandler } from './file-handler.js';
 import { setupAutoUpdater, checkForUpdates } from './updater.js';
 
+app.commandLine.appendSwitch('disable-features', 'AutofillServerCommunication');
+
 let windowManager: WindowManager;
 
 function createWindow() {
