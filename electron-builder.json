@@ -54,5 +54,10 @@
         "path": "/Applications"
       }
     ]
+  },
+  "publish": {
+    "provider": "github",
+    "owner": "heishia",
+    "repo": "ppop_memo"
   }
 }
