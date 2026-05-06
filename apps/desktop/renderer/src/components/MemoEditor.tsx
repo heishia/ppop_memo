@@ -15,6 +15,11 @@ interface Folder {
   parent_id: number | null;
 }
 
+interface ContextMenuState {
+  x: number;
+  y: number;
+}
+
 interface MemoEditorProps {
   memoId: number;
   memo: any;
@@ -26,6 +31,8 @@ export interface MemoEditorRef {
   saveNow: () => Promise<void>;
 }
 
+const EMOJI_OPTIONS = ['😀', '😂', '😍', '👍', '🙏', '🔥', '⭐', '💡', '📌', '✅', '🎉', '❤️'];
+
 const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, mode, canvasClearRef }, ref) => {
   const [title, setTitle] = useState(memo?.title || '');
   const [showTitle, setShowTitle] = useState(!!memo?.title);
@@ -34,9 +41,12 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
   const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedFolderId, setSelectedFolderId] = useState<number | null>(memo?.folder_id || null);
   const [showFolderModal, setShowFolderModal] = useState(false);
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const titleRef = useRef(title);
   const contentRef = useRef(memo?.content || '');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
   
   const contentHistory = useUndoRedo<string>(memo?.content || '');
   const [content, setContent] = useState(contentHistory.state);
@@ -66,6 +76,33 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
   useEffect(() => {
     loadFolders();
   }, []);
+
+  useEffect(() => {
+    const handleMouseDown = (event: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
+        setContextMenu(null);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setContextMenu(null);
+      }
+    };
+    const handleResize = () => setContextMenu(null);
+
+    if (contextMenu) {
+      document.addEventListener('mousedown', handleMouseDown);
+      document.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('resize', handleResize, { once: true });
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [contextMenu]);
 
   const loadFolders = async () => {
     const allFolders = await window.electronAPI.folder.list();
@@ -143,8 +180,70 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
     setContent(newContent);
+    contentRef.current = newContent;
     contentHistory.set(newContent);
     saveMemo();
+  };
+
+  const updateContent = (newContent: string) => {
+    setContent(newContent);
+    contentRef.current = newContent;
+    contentHistory.set(newContent);
+    saveMemo();
+  };
+
+  const replaceSelection = (insertText: string, selectionStart?: number, selectionEnd?: number) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = selectionStart ?? textarea.selectionStart;
+    const end = selectionEnd ?? textarea.selectionEnd;
+    const newContent = `${content.slice(0, start)}${insertText}${content.slice(end)}`;
+
+    updateContent(newContent);
+    setContextMenu(null);
+
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const cursorPosition = start + insertText.length;
+      textarea.setSelectionRange(cursorPosition, cursorPosition);
+    });
+  };
+
+  const handleInsertCheckbox = (checked = false) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = content.slice(start, end);
+    const checkbox = checked ? '☑' : '☐';
+
+    if (selectedText) {
+      const checkboxLines = selectedText
+        .split('\n')
+        .map((line) => `${checkbox} ${line}`)
+        .join('\n');
+      replaceSelection(checkboxLines, start, end);
+      return;
+    }
+
+    const needsNewLine = start > 0 && content[start - 1] !== '\n';
+    replaceSelection(`${needsNewLine ? '\n' : ''}${checkbox} `, start, end);
+  };
+
+  const handleInsertEmoji = (emoji: string) => {
+    replaceSelection(emoji);
+  };
+
+  const handleTextAreaContextMenu = (event: React.MouseEvent<HTMLTextAreaElement>) => {
+    event.preventDefault();
+    textareaRef.current?.focus();
+
+    setContextMenu({
+      x: Math.min(event.clientX, window.innerWidth - 220),
+      y: Math.min(event.clientY, window.innerHeight - 260),
+    });
   };
 
   const handleFolderSelect = async (folderId: number | null) => {
@@ -277,11 +376,47 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
           </div>
         )}
         <textarea
+          ref={textareaRef}
           value={content}
           onChange={handleContentChange}
+          onContextMenu={handleTextAreaContextMenu}
           placeholder="메모를 입력하세요..."
           className="flex-1 w-full px-3 py-2 border-0 resize-none focus:outline-none bg-transparent overflow-auto pb-12 text-gray-200 placeholder-gray-600"
         />
+        {contextMenu && (
+          <div
+            ref={contextMenuRef}
+            className="fixed w-52 rounded-lg border border-gray-700 bg-gray-950 py-2 shadow-xl z-50 text-gray-200"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            <button
+              onClick={handleInsertCheckbox}
+              className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-gray-800"
+            >
+              체크박스 추가
+            </button>
+            <button
+              onClick={() => handleInsertCheckbox(true)}
+              className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-gray-800"
+            >
+              체크된 박스 추가
+            </button>
+            <div className="my-1 border-t border-gray-800"></div>
+            <div className="px-3 pb-2 text-xs font-medium text-gray-500">이모지</div>
+            <div className="grid grid-cols-6 gap-1 px-2">
+              {EMOJI_OPTIONS.map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => handleInsertEmoji(emoji)}
+                  className="rounded p-1.5 text-lg leading-none transition-colors hover:bg-gray-800"
+                  title={`${emoji} 삽입`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="absolute bottom-4 left-3 flex gap-4">
           {!showTitle && (
             <span
