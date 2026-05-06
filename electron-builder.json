@@ -24,7 +24,11 @@
   },
   "nsis": {
     "oneClick": false,
-    "allowToChangeInstallationDirectory": true
+    "allowToChangeInstallationDirectory": true,
+    "artifactName": "${productName} Setup.${ext}"
+  },
+  "portable": {
+    "artifactName": "${productName}.${ext}"
   },
   "compression": "normal",
   "mac": {

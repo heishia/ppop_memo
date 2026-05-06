@@ -269,6 +269,20 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
     setContextMenu(null);
   };
 
+  const handleDeleteLine = (lineIndex = contextMenu?.lineIndex ?? activeSelectionRef.current?.lineIndex ?? 0) => {
+    const lines = getLines();
+
+    if (lines.length === 1) {
+      lines[0] = '';
+      updateLines(lines, 0, 0);
+    } else {
+      lines.splice(lineIndex, 1);
+      updateLines(lines, Math.min(lineIndex, lines.length - 1));
+    }
+
+    setContextMenu(null);
+  };
+
   const handleInsertEmoji = (emoji: string) => {
     const lines = getLines();
     const selection = activeSelectionRef.current ?? {
@@ -501,7 +515,7 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
                   event.stopPropagation();
                   handleEditorContextMenu(event, index);
                 }}
-                className="flex min-h-[1.75rem] items-center gap-2"
+                className="group flex min-h-[1.75rem] items-center gap-2"
               >
                 {todo && (
                   <input
@@ -529,6 +543,13 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
                     todo?.checked ? 'text-gray-500 line-through' : ''
                   }`}
                 />
+                <button
+                  onClick={() => handleDeleteLine(index)}
+                  className="shrink-0 rounded px-1.5 text-sm text-gray-600 opacity-0 transition hover:bg-gray-800 hover:text-gray-300 group-hover:opacity-100 focus:opacity-100"
+                  title="줄 삭제"
+                >
+                  ×
+                </button>
               </div>
             );
           })}
@@ -544,6 +565,12 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
               className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-gray-800"
             >
               투두 추가
+            </button>
+            <button
+              onClick={() => handleDeleteLine()}
+              className="w-full px-3 py-2 text-left text-sm transition-colors text-red-300 hover:bg-gray-800"
+            >
+              줄 삭제
             </button>
             <div className="my-1 border-t border-gray-800"></div>
             <div className="px-3 pb-2 text-xs font-medium text-gray-500">이모지</div>
