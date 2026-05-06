@@ -327,10 +327,18 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
       updateLines(lines, lineIndex + 1, 0);
     }
 
-    if (event.key === 'Backspace' && input.selectionStart === 0 && input.selectionEnd === 0 && input.value === '') {
+    if (event.key === 'Backspace' && input.selectionStart === 0 && input.selectionEnd === 0) {
       event.preventDefault();
       const lines = getLines();
-      if (lines.length === 1) return;
+
+      const todo = parseTodoLine(lines[lineIndex] || '');
+      if (todo) {
+        lines[lineIndex] = todo.text;
+        updateLines(lines, lineIndex, 0);
+        return;
+      }
+
+      if (input.value !== '' || lines.length === 1) return;
       lines.splice(lineIndex, 1);
       updateLines(lines, Math.max(0, lineIndex - 1));
     }
