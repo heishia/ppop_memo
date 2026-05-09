@@ -18,18 +18,6 @@ interface Folder {
 interface ContextMenuState {
   x: number;
   y: number;
-  lineIndex: number;
-}
-
-interface TodoLine {
-  checked: boolean;
-  text: string;
-}
-
-interface ActiveSelection {
-  lineIndex: number;
-  start: number;
-  end: number;
 }
 
 interface MemoEditorProps {
@@ -57,9 +45,8 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const titleRef = useRef(title);
   const contentRef = useRef(memo?.content || '');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
-  const lineInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
-  const activeSelectionRef = useRef<ActiveSelection | null>(null);
   
   const contentHistory = useUndoRedo<string>(memo?.content || '');
   const [content, setContent] = useState(contentHistory.state);
@@ -197,185 +184,54 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
     saveMemo();
   };
 
-  const getLines = () => {
-    const lines = content.split('\n');
-    return lines.length === 0 ? [''] : lines;
-  };
-
-  const parseTodoLine = (line: string): TodoLine | null => {
-    const markdownTodo = line.match(/^- \[([ xX])\]\s?(.*)$/);
-    if (markdownTodo) {
-      return {
-        checked: markdownTodo[1].toLowerCase() === 'x',
-        text: markdownTodo[2],
-      };
-    }
-
-    const legacyTodo = line.match(/^([☐☑])\s?(.*)$/);
-    if (legacyTodo) {
-      return {
-        checked: legacyTodo[1] === '☑',
-        text: legacyTodo[2],
-      };
-    }
-
-    return null;
-  };
-
-  const formatTodoLine = (checked: boolean, text: string) => `- [${checked ? 'x' : ' '}] ${text}`;
-
-  const updateLines = (lines: string[], focusLineIndex?: number, caretPosition?: number) => {
-    updateContent(lines.join('\n'));
-
-    if (focusLineIndex !== undefined) {
-      requestAnimationFrame(() => {
-        const input = lineInputRefs.current[focusLineIndex];
-        if (!input) return;
-        const nextCaret = caretPosition ?? input.value.length;
-        input.focus();
-        input.setSelectionRange(nextCaret, nextCaret);
-      });
-    }
-  };
-
-  const updateLineText = (lineIndex: number, text: string) => {
-    const lines = getLines();
-    const todo = parseTodoLine(lines[lineIndex] || '');
-    lines[lineIndex] = todo ? formatTodoLine(todo.checked, text) : text;
-    updateLines(lines);
-  };
-
-  const recordSelection = (lineIndex: number, input: HTMLInputElement) => {
-    activeSelectionRef.current = {
-      lineIndex,
-      start: input.selectionStart ?? input.value.length,
-      end: input.selectionEnd ?? input.value.length,
-    };
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    updateContent(e.target.value);
   };
 
   const handleInsertTodo = () => {
-    const lines = getLines();
-    const targetLineIndex = contextMenu?.lineIndex ?? activeSelectionRef.current?.lineIndex ?? lines.length - 1;
-    const targetLine = lines[targetLineIndex] ?? '';
+    const textarea = textareaRef.current;
+    if (!textarea) return;
 
-    if (targetLine.trim() === '') {
-      lines[targetLineIndex] = formatTodoLine(false, '');
-      updateLines(lines, targetLineIndex, 0);
-    } else {
-      lines.splice(targetLineIndex + 1, 0, formatTodoLine(false, ''));
-      updateLines(lines, targetLineIndex + 1, 0);
-    }
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const insertText = `${start > 0 && content[start - 1] !== '\n' ? '\n' : ''}- [ ] `;
+    const newContent = `${content.slice(0, start)}${insertText}${content.slice(end)}`;
 
+    updateContent(newContent);
     setContextMenu(null);
-  };
 
-  const handleDeleteLine = (lineIndex = contextMenu?.lineIndex ?? activeSelectionRef.current?.lineIndex ?? 0) => {
-    const lines = getLines();
-
-    if (lines.length === 1) {
-      lines[0] = '';
-      updateLines(lines, 0, 0);
-    } else {
-      lines.splice(lineIndex, 1);
-      updateLines(lines, Math.min(lineIndex, lines.length - 1));
-    }
-
-    setContextMenu(null);
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const cursorPosition = start + insertText.length;
+      textarea.setSelectionRange(cursorPosition, cursorPosition);
+    });
   };
 
   const handleInsertEmoji = (emoji: string) => {
-    const lines = getLines();
-    const selection = activeSelectionRef.current ?? {
-      lineIndex: contextMenu?.lineIndex ?? lines.length - 1,
-      start: (parseTodoLine(lines[contextMenu?.lineIndex ?? lines.length - 1] || '')?.text || lines[contextMenu?.lineIndex ?? lines.length - 1] || '').length,
-      end: (parseTodoLine(lines[contextMenu?.lineIndex ?? lines.length - 1] || '')?.text || lines[contextMenu?.lineIndex ?? lines.length - 1] || '').length,
-    };
+    const textarea = textareaRef.current;
+    if (!textarea) return;
 
-    const line = lines[selection.lineIndex] || '';
-    const todo = parseTodoLine(line);
-    const currentText = todo ? todo.text : line;
-    const nextText = `${currentText.slice(0, selection.start)}${emoji}${currentText.slice(selection.end)}`;
-    lines[selection.lineIndex] = todo ? formatTodoLine(todo.checked, nextText) : nextText;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const newContent = `${content.slice(0, start)}${emoji}${content.slice(end)}`;
 
-    updateLines(lines, selection.lineIndex, selection.start + emoji.length);
+    updateContent(newContent);
     setContextMenu(null);
+
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const cursorPosition = start + emoji.length;
+      textarea.setSelectionRange(cursorPosition, cursorPosition);
+    });
   };
 
-  const handleTodoToggle = (lineIndex: number) => {
-    const lines = getLines();
-    const todo = parseTodoLine(lines[lineIndex] || '');
-    if (!todo) return;
-
-    lines[lineIndex] = formatTodoLine(!todo.checked, todo.text);
-    updateLines(lines);
-  };
-
-  const handleLineKeyDown = (event: React.KeyboardEvent<HTMLInputElement>, lineIndex: number) => {
-    const input = event.currentTarget;
-
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      const lines = getLines();
-      const todo = parseTodoLine(lines[lineIndex] || '');
-      const currentText = input.value;
-      const cursor = input.selectionStart ?? currentText.length;
-      const before = currentText.slice(0, cursor);
-      const after = currentText.slice(input.selectionEnd ?? cursor);
-
-      lines[lineIndex] = todo ? formatTodoLine(todo.checked, before) : before;
-      lines.splice(lineIndex + 1, 0, todo ? formatTodoLine(false, after) : after);
-      updateLines(lines, lineIndex + 1, 0);
-    }
-
-    if (event.key === 'Backspace' && input.selectionStart === 0 && input.selectionEnd === 0) {
-      event.preventDefault();
-      const lines = getLines();
-
-      const todo = parseTodoLine(lines[lineIndex] || '');
-      if (todo) {
-        lines[lineIndex] = todo.text;
-        updateLines(lines, lineIndex, 0);
-        return;
-      }
-
-      if (input.value !== '' || lines.length === 1) return;
-      lines.splice(lineIndex, 1);
-      updateLines(lines, Math.max(0, lineIndex - 1));
-    }
-  };
-
-  const handleLinePaste = (event: React.ClipboardEvent<HTMLInputElement>, lineIndex: number) => {
-    const pastedText = event.clipboardData.getData('text');
-    if (!pastedText.includes('\n')) return;
-
+  const handleTextAreaContextMenu = (event: React.MouseEvent<HTMLTextAreaElement>) => {
     event.preventDefault();
-
-    const input = event.currentTarget;
-    const lines = getLines();
-    const todo = parseTodoLine(lines[lineIndex] || '');
-    const currentText = input.value;
-    const start = input.selectionStart ?? currentText.length;
-    const end = input.selectionEnd ?? currentText.length;
-    const pastedLines = pastedText.replace(/\r\n/g, '\n').split('\n');
-    const firstLine = `${currentText.slice(0, start)}${pastedLines[0]}`;
-    const lastLine = `${pastedLines[pastedLines.length - 1]}${currentText.slice(end)}`;
-    const newLines = pastedLines.length === 1 ? [firstLine] : [firstLine, ...pastedLines.slice(1, -1), lastLine];
-
-    lines.splice(
-      lineIndex,
-      1,
-      ...newLines.map((line, index) => (todo && index === 0 ? formatTodoLine(todo.checked, line) : line))
-    );
-    updateLines(lines, lineIndex + newLines.length - 1, pastedLines[pastedLines.length - 1].length);
-  };
-
-  const handleEditorContextMenu = (event: React.MouseEvent<HTMLDivElement>, lineIndex?: number) => {
-    event.preventDefault();
+    textareaRef.current?.focus();
 
     setContextMenu({
       x: Math.min(event.clientX, window.innerWidth - 220),
       y: Math.min(event.clientY, window.innerHeight - 260),
-      lineIndex: lineIndex ?? getLines().length - 1,
     });
   };
 
@@ -508,60 +364,14 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
             {title || '제목'}
           </div>
         )}
-        <div
-          onContextMenu={(event) => handleEditorContextMenu(event)}
-          className="flex-1 w-full px-3 py-2 overflow-auto pb-12 text-gray-200"
-        >
-          {getLines().map((line, index) => {
-            const todo = parseTodoLine(line);
-            const inputValue = todo ? todo.text : line;
-
-            return (
-              <div
-                key={index}
-                onContextMenu={(event) => {
-                  event.stopPropagation();
-                  handleEditorContextMenu(event, index);
-                }}
-                className="group flex min-h-[1.75rem] items-center gap-2"
-              >
-                {todo && (
-                  <input
-                    type="checkbox"
-                    checked={todo.checked}
-                    onChange={() => handleTodoToggle(index)}
-                    className="h-4 w-4 shrink-0 cursor-pointer accent-blue-500"
-                    title="완료 여부"
-                  />
-                )}
-                <input
-                  ref={(element) => {
-                    lineInputRefs.current[index] = element;
-                  }}
-                  value={inputValue}
-                  onChange={(event) => updateLineText(index, event.target.value)}
-                  onFocus={(event) => recordSelection(index, event.currentTarget)}
-                  onClick={(event) => recordSelection(index, event.currentTarget)}
-                  onKeyUp={(event) => recordSelection(index, event.currentTarget)}
-                  onSelect={(event) => recordSelection(index, event.currentTarget)}
-                  onKeyDown={(event) => handleLineKeyDown(event, index)}
-                  onPaste={(event) => handleLinePaste(event, index)}
-                  placeholder={index === 0 && content === '' ? '메모를 입력하세요...' : ''}
-                  className={`min-w-0 flex-1 border-0 bg-transparent px-0 py-0.5 text-gray-200 placeholder-gray-600 outline-none ${
-                    todo?.checked ? 'text-gray-500 line-through' : ''
-                  }`}
-                />
-                <button
-                  onClick={() => handleDeleteLine(index)}
-                  className="shrink-0 rounded px-1.5 text-sm text-gray-600 opacity-0 transition hover:bg-gray-800 hover:text-gray-300 group-hover:opacity-100 focus:opacity-100"
-                  title="줄 삭제"
-                >
-                  ×
-                </button>
-              </div>
-            );
-          })}
-        </div>
+        <textarea
+          ref={textareaRef}
+          value={content}
+          onChange={handleContentChange}
+          onContextMenu={handleTextAreaContextMenu}
+          placeholder="메모를 입력하세요..."
+          className="flex-1 w-full px-3 py-2 border-0 resize-none focus:outline-none bg-transparent overflow-auto pb-12 text-gray-200 placeholder-gray-600"
+        />
         {contextMenu && (
           <div
             ref={contextMenuRef}
@@ -573,12 +383,6 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
               className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-gray-800"
             >
               투두 추가
-            </button>
-            <button
-              onClick={() => handleDeleteLine()}
-              className="w-full px-3 py-2 text-left text-sm transition-colors text-red-300 hover:bg-gray-800"
-            >
-              줄 삭제
             </button>
             <div className="my-1 border-t border-gray-800"></div>
             <div className="px-3 pb-2 text-xs font-medium text-gray-500">이모지</div>
