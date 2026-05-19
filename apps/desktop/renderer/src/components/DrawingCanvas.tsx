@@ -84,10 +84,10 @@ function DrawingCanvas({ canvasData, onCanvasChange, clearRef }: DrawingCanvasPr
     if (!canvasRef.current || !containerRef.current) return;
     
     const getCanvasSize = () => {
-      const rect = containerRef.current?.getBoundingClientRect();
+      const container = containerRef.current;
       return {
-        width: Math.max(1, Math.floor(rect?.width || 800)),
-        height: Math.max(1, Math.floor(rect?.height || 600)),
+        width: Math.max(1, Math.floor(container?.clientWidth || 800)),
+        height: Math.max(1, Math.floor(container?.clientHeight || 600)),
       };
     };
     
@@ -156,8 +156,16 @@ function DrawingCanvas({ canvasData, onCanvasChange, clearRef }: DrawingCanvasPr
       canvas.requestRenderAll();
     };
 
+    let resizeFrame: number | null = null;
     const resizeObserver = new ResizeObserver(() => {
-      resizeCanvas();
+      if (resizeFrame !== null) {
+        cancelAnimationFrame(resizeFrame);
+      }
+
+      resizeFrame = requestAnimationFrame(() => {
+        resizeFrame = null;
+        resizeCanvas();
+      });
     });
 
     resizeObserver.observe(containerRef.current);
@@ -166,6 +174,9 @@ function DrawingCanvas({ canvasData, onCanvasChange, clearRef }: DrawingCanvasPr
     return () => {
       if (recognitionTimeout) {
         clearTimeout(recognitionTimeout);
+      }
+      if (resizeFrame !== null) {
+        cancelAnimationFrame(resizeFrame);
       }
       resizeObserver.disconnect();
       canvas.dispose();
@@ -225,7 +236,7 @@ function DrawingCanvas({ canvasData, onCanvasChange, clearRef }: DrawingCanvasPr
   };
   
   return (
-    <div ref={containerRef} className="w-full h-full border rounded relative overflow-hidden">
+    <div ref={containerRef} className="absolute inset-0 box-border border rounded overflow-hidden">
       <canvas ref={canvasRef} />
       {isRecognizing && (
         <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded text-sm">
