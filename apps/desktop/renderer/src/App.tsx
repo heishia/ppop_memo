@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import MemoWindow from './components/MemoWindow';
 
 declare global {
   interface Window {
     electronAPI: {
       memo: {
-        create: () => Promise<any>;
+        create: (data?: any) => Promise<any>;
         get: (id: number) => Promise<any>;
         update: (id: number, data: any) => Promise<any>;
         delete: (id: number) => Promise<any>;
         list: () => Promise<any[]>;
         search: (query: string) => Promise<any[]>;
+        moveToFolder: (memoId: number, folderId?: number | null) => Promise<any>;
       };
       folder: {
         create: (name: string, parentId?: number) => Promise<any>;
@@ -23,6 +24,7 @@ declare global {
         getId: () => number;
         minimize: () => Promise<any>;
         close: () => Promise<any>;
+        loadMemo: (memoId: number) => Promise<any>;
         createNew: () => Promise<any>;
       };
       settings: {

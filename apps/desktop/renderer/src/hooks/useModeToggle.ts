@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export function useModeToggle(initialMode: 'text' | 'canvas' = 'text') {
   const [mode, setMode] = useState<'text' | 'canvas'>(initialMode);

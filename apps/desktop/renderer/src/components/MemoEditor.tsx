@@ -127,11 +127,6 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
     }, 500);
   };
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value);
-    saveMemo();
-  };
-
   const handleAddTitle = () => {
     setTempTitle(title);
     setShowTitleModal(true);
@@ -219,13 +214,6 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
     await window.electronAPI.memo.moveToFolder(memoId, folderId);
     setShowFolderModal(false);
   };
-
-  const getSelectedFolderName = () => {
-    if (selectedFolderId === null) return '폴더 없음';
-    const folder = folders.find(f => f.id === selectedFolderId);
-    return folder ? folder.name : '폴더 없음';
-  };
-
 
   if (mode === 'canvas') {
     return (

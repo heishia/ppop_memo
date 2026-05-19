@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { SearchService } from '../services/search-service';
 
 interface SearchBarProps {
@@ -7,7 +7,7 @@ interface SearchBarProps {
 
 function SearchBar({ onSearchResults }: SearchBarProps) {
   const [query, setQuery] = useState('');
-  const debounceRef = useRef<NodeJS.Timeout>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   
   useEffect(() => {
     if (debounceRef.current) {

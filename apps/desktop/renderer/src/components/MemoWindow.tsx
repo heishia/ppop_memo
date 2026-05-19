@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import MemoEditor from './MemoEditor';
 import MemoManagement from './MemoManagement';
 import Settings from './Settings';

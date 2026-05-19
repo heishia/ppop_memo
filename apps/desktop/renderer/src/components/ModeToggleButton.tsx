@@ -1,4 +1,3 @@
-import React, { useEffect } from 'react';
 import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut';
 
 interface ModeToggleButtonProps {

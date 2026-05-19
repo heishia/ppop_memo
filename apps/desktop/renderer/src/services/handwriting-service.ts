@@ -21,7 +21,7 @@ export class HandwritingService {
     }
     
     try {
-      const { createWorker } = await import('tesseract.js');
+      await import('tesseract.js');
       this.tesseractAvailable = true;
     } catch (error) {
       console.warn('Tesseract.js not available:', error);
@@ -57,17 +57,18 @@ export class HandwritingService {
       }
       
       const { Editor } = iinkModule;
+      const env = (import.meta as any).env || {};
       const editor = new Editor({
         recognitionParams: {
           type: 'TEXT',
           protocol: 'WEBSOCKET',
-          apiKey: process.env.MYSCRIPT_API_KEY || '',
-          hmacKey: process.env.MYSCRIPT_HMAC_KEY || '',
+          apiKey: env.VITE_MYSCRIPT_API_KEY || '',
+          hmacKey: env.VITE_MYSCRIPT_HMAC_KEY || '',
           server: {
             scheme: 'https',
             host: 'cloud.myscript.com',
-            applicationKey: process.env.MYSCRIPT_APPLICATION_KEY || '',
-            hmacKey: process.env.MYSCRIPT_HMAC_KEY || '',
+            applicationKey: env.VITE_MYSCRIPT_APPLICATION_KEY || '',
+            hmacKey: env.VITE_MYSCRIPT_HMAC_KEY || '',
           },
         },
       });
