@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
-import { HandwritingService, RecognitionResult } from '../services/handwriting-service';
+import { HandwritingService } from '../services/handwriting-service';
 import { HANDWRITING_CONFIG } from '../config/handwriting';
 import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut';
 
@@ -11,6 +11,7 @@ interface DrawingCanvasProps {
 }
 
 function DrawingCanvas({ canvasData, onCanvasChange, clearRef }: DrawingCanvasProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
@@ -80,11 +81,17 @@ function DrawingCanvas({ canvasData, onCanvasChange, clearRef }: DrawingCanvasPr
   }, [clearRef]);
   
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current || !containerRef.current) return;
     
-    const container = canvasRef.current.parentElement;
-    const width = container?.clientWidth || 800;
-    const height = container?.clientHeight || 600;
+    const getCanvasSize = () => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      return {
+        width: Math.max(1, Math.floor(rect?.width || 800)),
+        height: Math.max(1, Math.floor(rect?.height || 600)),
+      };
+    };
+    
+    const { width, height } = getCanvasSize();
     
     const canvas = new fabric.Canvas(canvasRef.current, {
       width: width,
@@ -112,7 +119,7 @@ function DrawingCanvas({ canvasData, onCanvasChange, clearRef }: DrawingCanvasPr
       historyIndexRef.current = 0;
     }
     
-    let recognitionTimeout: NodeJS.Timeout;
+    let recognitionTimeout: ReturnType<typeof setTimeout>;
     
     canvas.on('path:created', () => {
       const json = JSON.stringify(canvas.toJSON());
@@ -135,11 +142,32 @@ function DrawingCanvas({ canvasData, onCanvasChange, clearRef }: DrawingCanvasPr
       saveHistory(canvas);
       onCanvasChange(json);
     });
+
+    const resizeCanvas = () => {
+      if (!fabricCanvasRef.current) return;
+
+      const nextSize = getCanvasSize();
+      if (nextSize.width === canvas.getWidth() && nextSize.height === canvas.getHeight()) {
+        return;
+      }
+
+      canvas.setDimensions(nextSize);
+      canvas.calcOffset();
+      canvas.requestRenderAll();
+    };
+
+    const resizeObserver = new ResizeObserver(() => {
+      resizeCanvas();
+    });
+
+    resizeObserver.observe(containerRef.current);
+    requestAnimationFrame(resizeCanvas);
     
     return () => {
       if (recognitionTimeout) {
         clearTimeout(recognitionTimeout);
       }
+      resizeObserver.disconnect();
       canvas.dispose();
     };
   }, []);
@@ -147,7 +175,7 @@ function DrawingCanvas({ canvasData, onCanvasChange, clearRef }: DrawingCanvasPr
   const recognizeAndConvert = async (canvas: fabric.Canvas) => {
     setIsRecognizing(true);
     try {
-      const paths = canvas.getObjects().filter(obj => obj.type === 'path') as fabric.Path[];
+      const paths = canvas.getObjects().filter((obj: fabric.Object) => obj.type === 'path') as fabric.Path[];
       if (paths.length === 0) return;
       
       const strokes = paths.map(path => {
@@ -197,7 +225,7 @@ function DrawingCanvas({ canvasData, onCanvasChange, clearRef }: DrawingCanvasPr
   };
   
   return (
-    <div className="w-full h-full border rounded relative overflow-hidden">
+    <div ref={containerRef} className="w-full h-full border rounded relative overflow-hidden">
       <canvas ref={canvasRef} />
       {isRecognizing && (
         <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded text-sm">

@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import DrawingCanvas from './DrawingCanvas';
-import { useUndoRedo } from '../hooks/useUndoRedo';
-import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut';
 
 const FolderIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -47,9 +45,7 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
   const contentRef = useRef(memo?.content || '');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
-  
-  const contentHistory = useUndoRedo<string>(memo?.content || '');
-  const [content, setContent] = useState(contentHistory.state);
+  const [content, setContent] = useState(memo?.content || '');
 
   useEffect(() => {
     titleRef.current = title;
@@ -60,15 +56,10 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
   }, [content]);
 
   useEffect(() => {
-    setContent(contentHistory.state);
-    contentRef.current = contentHistory.state;
-  }, [contentHistory.state]);
-
-  useEffect(() => {
     setTitle(memo?.title || '');
     const newContent = memo?.content || '';
     setContent(newContent);
-    contentHistory.reset(newContent);
+    contentRef.current = newContent;
     setShowTitle(!!memo?.title);
     setSelectedFolderId(memo?.folder_id || null);
   }, [memo]);
@@ -108,24 +99,6 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
     const allFolders = await window.electronAPI.folder.list();
     setFolders(allFolders);
   };
-
-  useKeyboardShortcut('ctrl+z', () => {
-    if (mode === 'text' && contentHistory.canUndo) {
-      contentHistory.undo();
-    }
-  });
-
-  useKeyboardShortcut('ctrl+shift+z', () => {
-    if (mode === 'text' && contentHistory.canRedo) {
-      contentHistory.redo();
-    }
-  });
-
-  useKeyboardShortcut('ctrl+y', () => {
-    if (mode === 'text' && contentHistory.canRedo) {
-      contentHistory.redo();
-    }
-  });
 
   const saveNow = async () => {
     if (saveTimeoutRef.current) {
@@ -180,12 +153,18 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
   const updateContent = (newContent: string) => {
     setContent(newContent);
     contentRef.current = newContent;
-    contentHistory.set(newContent);
     saveMemo();
   };
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     updateContent(e.target.value);
+  };
+
+  const handleTextAreaKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+      event.preventDefault();
+      event.currentTarget.setSelectionRange(0, event.currentTarget.value.length);
+    }
   };
 
   const handleInsertTodo = () => {
@@ -368,6 +347,7 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
           ref={textareaRef}
           value={content}
           onChange={handleContentChange}
+          onKeyDown={handleTextAreaKeyDown}
           onContextMenu={handleTextAreaContextMenu}
           placeholder="메모를 입력하세요..."
           className="flex-1 w-full px-3 py-2 border-0 resize-none focus:outline-none bg-transparent overflow-auto pb-12 text-gray-200 placeholder-gray-600"
