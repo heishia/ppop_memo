@@ -31,6 +31,11 @@ export interface MemoEditorRef {
 
 const EMOJI_OPTIONS = ['😀', '😂', '😍', '👍', '🙏', '🔥', '⭐', '💡', '📌', '✅', '🎉', '❤️'];
 
+// 오버레이와 textarea가 글자 위치(줄바꿈/캐럿/선택)를 완벽히 맞추려면 동일한 텍스트 메트릭을 공유해야 한다.
+const EDITOR_TEXT_CLASS = 'px-3 pt-2 pb-12 text-sm leading-6 font-sans tracking-normal whitespace-pre-wrap break-words';
+
+const TODO_MARKER_RE = /^- \[([ xX])\]/;
+
 const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, mode, canvasClearRef }, ref) => {
   const [title, setTitle] = useState(memo?.title || '');
   const [showTitle, setShowTitle] = useState(!!memo?.title);
@@ -44,8 +49,9 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
   const titleRef = useRef(title);
   const contentRef = useRef(memo?.content || '');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
-  const [content, setContent] = useState(memo?.content || '');
+  const [content, setContent] = useState<string>(memo?.content || '');
 
   useEffect(() => {
     titleRef.current = title;
@@ -67,6 +73,10 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
   useEffect(() => {
     loadFolders();
   }, []);
+
+  useEffect(() => {
+    syncScroll();
+  }, [content]);
 
   useEffect(() => {
     const handleMouseDown = (event: MouseEvent) => {
@@ -118,7 +128,7 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
-    
+
     saveTimeoutRef.current = setTimeout(async () => {
       await window.electronAPI.memo.update(memoId, {
         title: titleRef.current,
@@ -151,14 +161,83 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
     saveMemo();
   };
 
+  const syncScroll = () => {
+    if (overlayRef.current && textareaRef.current) {
+      overlayRef.current.scrollTop = textareaRef.current.scrollTop;
+      overlayRef.current.scrollLeft = textareaRef.current.scrollLeft;
+    }
+  };
+
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     updateContent(e.target.value);
   };
 
+  const toggleTodoAt = (lineStart: number, currentMark: string, caret: number) => {
+    const checkIndex = lineStart + 3;
+    const nextMark = currentMark.toLowerCase() === 'x' ? ' ' : 'x';
+    const newContent = content.slice(0, checkIndex) + nextMark + content.slice(checkIndex + 1);
+    updateContent(newContent);
+
+    requestAnimationFrame(() => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      textarea.focus();
+      textarea.setSelectionRange(caret, caret);
+    });
+  };
+
+  // 마커 영역을 클릭하면 체크 토글 (드래그 선택 중에는 무시)
+  const handleTextAreaClick = (event: React.MouseEvent<HTMLTextAreaElement>) => {
+    const textarea = event.currentTarget;
+    if (textarea.selectionStart !== textarea.selectionEnd) return;
+
+    const pos = textarea.selectionStart ?? 0;
+    const lineStart = content.lastIndexOf('\n', pos - 1) + 1;
+    const col = pos - lineStart;
+    if (col > 5) return;
+
+    const lineBreak = content.indexOf('\n', lineStart);
+    const line = content.slice(lineStart, lineBreak === -1 ? undefined : lineBreak);
+    const match = line.match(TODO_MARKER_RE);
+    if (!match) return;
+
+    toggleTodoAt(lineStart, match[1], pos);
+  };
+
   const handleTextAreaKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      const textarea = event.currentTarget;
+      const pos = textarea.selectionStart ?? 0;
+      if (pos !== (textarea.selectionEnd ?? pos)) return;
+
+      const lineStart = content.lastIndexOf('\n', pos - 1) + 1;
+      const lineBreak = content.indexOf('\n', lineStart);
+      const line = content.slice(lineStart, lineBreak === -1 ? undefined : lineBreak);
+      const match = line.match(TODO_MARKER_RE);
+      if (!match) return;
+
+      // 빈 투두에서 Enter -> 마커 제거, 내용 있는 투두에서 Enter -> 다음 줄도 투두로
+      const body = line.slice(match[0].length).replace(/^ /, '');
       event.preventDefault();
-      event.currentTarget.setSelectionRange(0, event.currentTarget.value.length);
+
+      if (body.trim() === '') {
+        const newContent = content.slice(0, lineStart) + content.slice(lineStart + line.length);
+        updateContent(newContent);
+        requestAnimationFrame(() => {
+          textarea.focus();
+          textarea.setSelectionRange(lineStart, lineStart);
+        });
+        return;
+      }
+
+      const insertText = '\n- [ ] ';
+      const newContent = content.slice(0, pos) + insertText + content.slice(textarea.selectionEnd ?? pos);
+      updateContent(newContent);
+      requestAnimationFrame(() => {
+        textarea.focus();
+        const caret = pos + insertText.length;
+        textarea.setSelectionRange(caret, caret);
+      });
     }
   };
 
@@ -213,6 +292,34 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
     setSelectedFolderId(folderId);
     await window.electronAPI.memo.moveToFolder(memoId, folderId);
     setShowFolderModal(false);
+  };
+
+  const renderOverlayLines = () => {
+    const lines = content.length ? content.split('\n') : [''];
+    return lines.map((line, index) => {
+      const match = line.match(TODO_MARKER_RE);
+      if (match) {
+        const checked = match[1].toLowerCase() === 'x';
+        const rest = line.slice(match[0].length);
+        return (
+          <div key={index}>
+            <span className="relative">
+              <span className="text-transparent">{match[0]}</span>
+              <input
+                type="checkbox"
+                checked={checked}
+                readOnly
+                tabIndex={-1}
+                aria-hidden
+                className="pointer-events-none absolute left-1 top-1/2 h-4 w-4 -translate-y-1/2 accent-blue-500"
+              />
+            </span>
+            <span className={checked ? 'text-gray-500 line-through' : ''}>{rest.length ? rest : '\u00a0'}</span>
+          </div>
+        );
+      }
+      return <div key={index}>{line.length ? line : '\u200b'}</div>;
+    });
   };
 
   if (mode === 'canvas') {
@@ -331,15 +438,27 @@ const MemoEditor = forwardRef<MemoEditorRef, MemoEditorProps>(({ memoId, memo, m
             {title || '제목'}
           </div>
         )}
-        <textarea
-          ref={textareaRef}
-          value={content}
-          onChange={handleContentChange}
-          onKeyDown={handleTextAreaKeyDown}
-          onContextMenu={handleTextAreaContextMenu}
-          placeholder="메모를 입력하세요..."
-          className="flex-1 w-full px-3 py-2 border-0 resize-none focus:outline-none bg-transparent overflow-auto pb-12 text-gray-200 placeholder-gray-600"
-        />
+        <div className="relative flex-1 min-h-0">
+          <div
+            ref={overlayRef}
+            aria-hidden
+            className={`${EDITOR_TEXT_CLASS} pointer-events-none absolute inset-0 overflow-y-scroll overflow-x-hidden text-gray-200`}
+          >
+            {renderOverlayLines()}
+          </div>
+          <textarea
+            ref={textareaRef}
+            value={content}
+            onChange={handleContentChange}
+            onClick={handleTextAreaClick}
+            onScroll={syncScroll}
+            onKeyDown={handleTextAreaKeyDown}
+            onContextMenu={handleTextAreaContextMenu}
+            spellCheck={false}
+            placeholder="메모를 입력하세요..."
+            className={`${EDITOR_TEXT_CLASS} absolute inset-0 h-full w-full resize-none overflow-y-scroll overflow-x-hidden border-0 bg-transparent text-transparent caret-gray-200 outline-none placeholder-gray-600 selection:bg-blue-500/40`}
+          />
+        </div>
         {contextMenu && (
           <div
             ref={contextMenuRef}
